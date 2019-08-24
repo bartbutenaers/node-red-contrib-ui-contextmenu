@@ -1,0 +1,39 @@
+{
+    "name": "node-red-contrib-ui-contextmenu",
+    "version": "1.0.0",
+    "description": "A Node-RED widget node to show a popup contextmenu in a Node-RED dashboard",
+    "dependencies": {
+    },
+    "author": {
+        "name": "Bart Butenaers"
+    },
+    "contributors": [
+        {
+            "name": "Stephen McLaughlin",
+            "url": "https://github.com/Steve-Mcl"
+        }
+    ],
+    "license": "Apache-2.0",
+    "keywords": [
+        "node-red",
+        "svg",
+        "graphics",
+        "interactive",
+        "drawing",
+        "floorplan",
+        "floor plan"
+    ],
+    "bugs": {
+        "url": "https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu/issues"
+    },
+    "homepage": "https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu.git"
+    },
+    "node-red": {
+        "nodes": {
+            "ui_context_menu": "context_menu.js"
+        }
+    }
+}
