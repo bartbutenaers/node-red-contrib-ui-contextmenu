@@ -22,6 +22,7 @@ module.exports = function(RED) {
         var configAsJson = JSON.stringify(config);
         
         // Based on the nice tutorial of Richard Umoffia (see https://dev.to/iamafro/how-to-create-a-custom-context-menu--5d7p)
+        // TODO font size doesn't work
         var html = String.raw`
         	<style>
                 .menu {
@@ -36,7 +37,7 @@ module.exports = function(RED) {
 
                         .menu-option {
                             font-weight: 500;
-                            font-size: 14px;
+                            font-size: ` + config.fontSize + `px;
                             padding: 10px 40px 10px 20px;
                             cursor: pointer;
 
@@ -47,13 +48,8 @@ module.exports = function(RED) {
                     }
                 }
             </style>
-            <div id='contextmenu_` + config.id + `' ng-init='init(` + configAsJson + `)' class="menu" display='none';>
+            <div id='div_` + config.id + `' ng-init='init(` + configAsJson + `)' class="menu" display='none';>
                 <ul class="menu-options">
-                    <li class="menu-option">Back</li>
-                    <li class="menu-option">Reload</li>
-                    <li class="menu-option">Save</li>
-                    <li class="menu-option">Save As</li>
-                    <li class="menu-option">Inspect</li>
                 </ul>
             </div>
         `;
@@ -73,8 +69,9 @@ module.exports = function(RED) {
     var ui = undefined;
     
     function ContextMenuNode(config) {
-         try {
-            var node = this;
+        var node = this;
+            
+        try {
             if(ui === undefined) {
                 ui = RED.require("node-red-dashboard")(RED);
             }
@@ -95,7 +92,27 @@ module.exports = function(RED) {
                         return value;
                     },
                     beforeEmit: function(msg, value) {   
-                        //debugger;
+                        // ******************************************************************************************
+                        // Server side validation of input messages.
+                        // ******************************************************************************************
+                        // Would like to ignore invalid input messages, but that seems not to possible in UI nodes:
+                        // See https://discourse.nodered.org/t/custom-ui-node-not-visible-in-dashboard-sidebar/9666
+                        // We will workaround it by sending 'null' message fields to the dashboard.
+                        
+                        if (config.position === "msg") {
+                            if (!msg.position || !msg.position.x || !msg.position.y || isNaN(msg.position.x) || isNaN(msg.position.y)) {
+                                node.error("When using message based position, the msg.position should x and y numbers");
+                                msg.position = null;
+                            }
+                        }
+            
+                        if (config.menu === "msg") {
+                            if (!msg.menu || !Array.isArray(msg.menu)) {
+                                node.error("When using message based menu items, the msg.menu should contain an array of menu items");
+                                msg.position = null;
+                            }
+                        }
+                            
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
@@ -104,30 +121,67 @@ module.exports = function(RED) {
                         }
                     },
                     initController: function($scope, events) {
-                        //debugger;
-                        $scope.flag = true;
-                        //console.log("initController")
-                        $scope.init = function (config) {
-                            $scope.config = config;
-                            $scope.contextMenu = document.getElementById("contextmenu_" + config.id);
-                            
-                            // When menu items available in the config screen, add those to the menu already
-                            var menuItems = $scope.config.menuItems || [];
-                            /*
-                            for (var i = min; i<=max; i++){
-                                var opt = document.createElement('option');
-                                opt.value = i;
-                                opt.class="menu-option";
-                                opt.innerHTML = i;
+                        // Remark: all client-side functions should be added here!  
+                        // If added above, it will be server-side functions which are not available at the client-side ...
+                        
+                        // Fill the menu with menu items
+                        function setupMenu(menuItems) {
+                            // Make sure there are no previous menu options available
+                            $scope.menuList.innerHTML = "";;
+                        
+                            menuItems.forEach(function(menuItem) {
+                                var optionElement = document.createElement('option');
                                 
+                                optionElement.value = menuItem.command || "undefined";
+                                optionElement.class = "menu-option";
                                 
-                                opt.addEventListener('click', function() {
-                                    node.send({payload: waarde});
+                                if (menuItem.enabled) {
+                                    optionElement.classList.remove("disabled");
+                                }
+                                else {
+                                    optionElement.classList.remove("disabled");
+                                }
+
+                                if (menuItem.visible) {
+                                    optionElement.style.display = "block";
+                                }
+                                else {
+                                    optionElement.style.display = "none";
+                                }                                
+                                
+                                if (menuItem.icon && menuItem.icon != "") {
+                                    optionElement.innerHTML = '<i class="fa fa-heart"></i>' + menuItem.label;
+                                }
+                                else {
+                                    optionElement.innerHTML = menuItem.label;
+                                } 
+                                
+                                optionElement.addEventListener('click', function() {
+                                    node.send({payload: command});
                                 });
                                 
-                                select.appendChild(opt);
+                                $scope.menuList.appendChild(optionElement);
+                            });
+                        } 
+                            
+                        $scope.flag = true;
+
+                        $scope.init = function (config) {
+                            $scope.config   = config;
+                            $scope.menuDiv  = document.getElementById("div_" + config.id);
+                            $scope.menuList = $scope.menuDiv.querySelector('ul');
+                            
+                            if ($scope.config.unit === "perc") {
+                                $scope.unit = "%";
                             }
-                            */
+                            else { // "pix"
+                                $scope.unit = "px";
+                            }
+                            
+                            // When menu items available in the config screen, add those to the menu already
+                            if ($scope.config.menuItems) {
+                                setupMenu($scope.config.menuItems);
+                            }
                         }
 
                         $scope.$watch('msg', function(msg) {
@@ -138,26 +192,26 @@ module.exports = function(RED) {
                             
                             debugger;
                             
-                            // TODO allow msg overriding the config screen settings
-                            // msg should also be able to disable or hide menu items from $scope.config.menuItems
-                            var position = $scope.config.position; // "fixed" or "msg"
-                            var unit = $scope.config.unit; // "perc" or "pix"
-                            var xCoordinate = $scope.config.xCoordinate;
-                            var yCoordinate = $scope.config.yCoordinate;
-                            var menu = $scope.config.menu; // "fixed" or "msg"
-                            var menuItems = $scope.config.menuItems || [];
-                            
-                            if (unit === "perc") {
-                                unit = "%";
-                            }
-                            else { // "pix"
-                                unit = "px";
-                            }
-                            
-                            $scope.contextMenu.style.display = "block";
+                            // TODO msg should also be able to disable or hide menu items from $scope.config.menuItems
 
-                            $scope.contextMenu.style.left = xCoordinate + unit;
-                            $scope.contextMenu.style.top =  yCoordinate + unit;
+                            if ($scope.config.position === "msg" && msg.position) {
+                                // Position the context menu based on the coordinates in the message
+                                $scope.menuDiv.style.left = msg.position.x + $scope.unit;
+                                $scope.menuDiv.style.top  = msg.position.y + $scope.unit;
+                            }
+                            else {
+                                // Position the context menu based on the coordinates in the config screen
+                                $scope.menuDiv.style.left = $scope.config.xCoordinate + $scope.unit;
+                                $scope.menuDiv.style.top  = $scope.config.yCoordinate + $scope.unit;
+                            }
+            
+                            if ($scope.config.menu === "msg" && msg.menu) {
+                                // Show the menu items that have been specified in the input message
+                                setupMenu(msg.menu);
+                            }
+                            
+                            // Show the menu to the user
+                            $scope.menuDiv.style.display = "block";
                         });
                     }
                 });
