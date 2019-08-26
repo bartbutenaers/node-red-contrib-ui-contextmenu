@@ -223,14 +223,47 @@ module.exports = function(RED) {
                         }
                     },
                     initController: function($scope, events) {
+                        console.log("ui_context_menu: ui_contextmenu.initController()")
+
                         // Remark: all client-side functions should be added here!  
                         // If added above, it will be server-side functions which are not available at the client-side ...
-                        
+
+                        //jquery equivelant .is()
+                        function is(element, match) {
+                            // match is string selector or an element or an array or elements
+                            if (match.nodeType) {
+                                return element === match;
+                            }
+
+                            var qa = (typeof (match) === 'string' ? document.querySelectorAll(match) : match),
+                                length = qa.length,
+                                returnArr = [];
+
+                            while (length--) {
+                                if (qa[length] === element) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    
+
                         // Fill the menu with menu items
                         function setupMenu(menuItems) {
                             // Make sure there are no previous menu options available
-                            $scope.menuList.innerHTML = "";;
-                        
+                            $scope.menuList.innerHTML = "";
+                            $scope.menuList.addEventListener('blur', function(e) {
+                                //when focus is removed from the UL, hide it
+                                //note however, this also means when you click an item so
+                                //this HACK causes a short delay allowing the click event to occur
+                                //TODO: gotta be a better way handle this - how does jQuery widget do this?
+                                
+                                //if something other than a menu button is steaking focus, hide the menu.
+                                if (!e.relatedTarget || !is(e.relatedTarget, ".menu-item > button")) {
+                                    $scope.menuList.classList.remove('menu-show');      
+                                }
+                            });
+
                             menuItems.forEach(function(menuItem) {
                                 var listItem = document.createElement('li');
                                 
@@ -257,9 +290,9 @@ module.exports = function(RED) {
                                 listItem.appendChild(button);
                                 
                                 button.addEventListener('click', function() {
+                                    debugger
                                     $scope.menuList.classList.remove('menu-show');
-                                    
-                                    node.send({payload: command});
+                                    $scope.send({payload: menuItem.command});
                                 });
                                 
                                 var innerHtml = "";
@@ -280,10 +313,12 @@ module.exports = function(RED) {
                         $scope.flag = true;
 
                         $scope.init = function (config) {
+                            console.log("ui_context_menu: ui_contextmenu.initController > $scope.init()")
+
                             $scope.config   = config;
                             $scope.menuDiv  = document.getElementById("div_" + config.id);
                             $scope.menuList = $scope.menuDiv.querySelector('ul');
-                            
+                            $scope.menuList.setAttribute("tabindex","1");//to permit focus & blur (blur will close the menu)
                             if ($scope.config.unit === "perc") {
                                 $scope.unit = "%";
                             }
@@ -298,24 +333,25 @@ module.exports = function(RED) {
                         }
 
                         $scope.$watch('msg', function(msg) {
+                            console.log("ui_context_menu: ui_contextmenu.initController > $scope.$watch('msg'...)")
+
                             // Ignore undefined messages.
                             if (!msg) {
                                 return;
                             }
                             
-                            debugger;
                             
                             // TODO msg should also be able to disable or hide menu items from $scope.config.menuItems
 
                             if ($scope.config.position === "msg" && msg.position) {
                                 // Position the context menu based on the coordinates in the message
-                                $scope.menuDiv.style.left = msg.position.x + $scope.unit;
-                                $scope.menuDiv.style.top  = msg.position.y + $scope.unit;
+                                $scope.menuList.style.left = msg.position.x + $scope.unit;
+                                $scope.menuList.style.top  = msg.position.y + $scope.unit;
                             }
                             else {
                                 // Position the context menu based on the coordinates in the config screen
-                                $scope.menuDiv.style.left = $scope.config.xCoordinate + $scope.unit;
-                                $scope.menuDiv.style.top  = $scope.config.yCoordinate + $scope.unit;
+                                $scope.menuList.style.left = $scope.config.xCoordinate + $scope.unit;
+                                $scope.menuList.style.top  = $scope.config.yCoordinate + $scope.unit;
                             }
             
                             if ($scope.config.menu === "msg" && msg.menu) {
@@ -325,6 +361,7 @@ module.exports = function(RED) {
                             
                             // Show the menu to the user
                             $scope.menuList.classList.add('menu-show');
+                            $scope.menuList.focus();
                         });
                     }
                 });
