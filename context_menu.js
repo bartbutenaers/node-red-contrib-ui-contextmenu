@@ -21,35 +21,137 @@ module.exports = function(RED) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);
         
-        // Based on the nice tutorial of Richard Umoffia (see https://dev.to/iamafro/how-to-create-a-custom-context-menu--5d7p)
-        // TODO font size doesn't work
+        // Based on a codepen from Ryan Morr (see https://codepen.io/ryanmorr/pen/JdOvYR)
         var html = String.raw`
         	<style>
                 .menu {
-                    width: 120px;
-                    box-shadow: 0 4px 5px 3px rgba(0, 0, 0, 0.2);
+                    position: fixed;
+                    width: 200px;
+                    padding: 2px;
+                    margin: 0;
+                    border: 1px solid #bbb;
+                    background: #eee;
+                    background: -webkit-linear-gradient(to bottom, #fff 0%, #e5e5e5 100px, #e5e5e5 100%);
+                    background: linear-gradient(to bottom, #fff 0%, #e5e5e5 100px, #e5e5e5 100%);
+                    z-index: 99000 !important;
+                    border-radius: 3px;
+                    box-shadow: 1px 1px 4px rgba(0,0,0,.2);
+                    opacity: 0;
+                    -webkit-transform: translate(0, 15px) scale(.95);
+                    transform: translate(0, 15px) scale(.95);
+                    transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+                    pointer-events: none;
+                }
+
+                .menu-item {
+                    display: block;
                     position: relative;
-                    display: none;
+                    margin: 0;
+                    padding: 0;
+                    white-space: nowrap;
+                }
 
-                    .menu-options {
-                        list-style: none;
-                        padding: 10px 0;
+                .menu-btn { 
+                    display: block;
+                    color: #444;
+                    font-family: 'Roboto', sans-serif;
+                    font-size: 18px;
+                    cursor: pointer;
+                    border: 1px solid transparent;
+                    white-space: nowrap;
+                    padding: 6px 8px;
+                    border-radius: 3px;
+                }
 
-                        .menu-option {
-                            font-weight: 500;
-                            font-size: ` + config.fontSize + `px;
-                            padding: 10px 40px 10px 20px;
-                            cursor: pointer;
+                button.menu-btn {
+                    background: none;
+                    line-height: normal;
+                    overflow: visible;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
+                    width: 100%;
+                    text-align: left;
+                }
 
-                            &:hover {
-                                background: rgba(0, 0, 0, 0.2);
-                            }
-                        }
-                    }
+                a.menu-btn {
+                    outline: 0 none;
+                    text-decoration: none;
+                }
+
+                .menu-text {
+                    margin-left: 25px;
+                }
+
+                .menu-btn .fa {
+                    position: absolute;
+                    left: 8px;
+                    top: 50%;
+                    -webkit-transform: translateY(-50%);
+                    transform: translateY(-50%);
+                }
+
+                .menu-item:hover > .menu-btn { 
+                    color: #fff; 
+                    outline: none; 
+                    background-color: #2E3940;
+                    background: -webkit-linear-gradient(to bottom, #5D6D79, #2E3940);
+                    background: linear-gradient(to bottom, #5D6D79, #2E3940);
+                    border: 1px solid #2E3940;
+                }
+
+                .menu-item-disabled {
+                    opacity: .5;
+                    pointer-events: none;
+                }
+
+                .menu-item-disabled .menu-btn {
+                    cursor: default;
+                }
+
+                .menu-separator {
+                    display:block;
+                    margin: 7px 5px;
+                    height:1px;
+                    border-bottom: 1px solid #fff;
+                    background-color: #aaa;
+                }
+
+                .menu-item-submenu::after {
+                    content: "";
+                    position: absolute;
+                    right: 6px;
+                    top: 50%;
+                    -webkit-transform: translateY(-50%);
+                    transform: translateY(-50%);
+                    border: 5px solid transparent;
+                    border-left-color: #808080; 
+                }
+
+                .menu-item-submenu:hover::after {
+                    border-left-color: #fff;
+                }
+
+                .menu .menu {
+                    top: 4px;
+                    left: 99%;
+                }
+
+                .menu-show,
+                .menu-item:hover > .menu {
+                    opacity: 1;
+                    -webkit-transform: translate(0, 0) scale(1);
+                    transform: translate(0, 0) scale(1);
+                    pointer-events: auto;
+                }
+
+                .menu-item:hover > .menu {
+                    -webkit-transition-delay: 300ms;
+                    transition-delay: 300ms;
                 }
             </style>
-            <div id='div_` + config.id + `' ng-init='init(` + configAsJson + `)' class="menu" display='none';>
-                <ul class="menu-options">
+            <div id='div_` + config.id + `' ng-init='init(` + configAsJson + `)'>
+                <ul class="menu">
                 </ul>
             </div>
         `;
@@ -130,37 +232,48 @@ module.exports = function(RED) {
                             $scope.menuList.innerHTML = "";;
                         
                             menuItems.forEach(function(menuItem) {
-                                var optionElement = document.createElement('option');
+                                var listItem = document.createElement('li');
                                 
-                                optionElement.value = menuItem.command || "undefined";
-                                optionElement.class = "menu-option";
+                                listItem.classList.add("menu-item");
                                 
                                 if (menuItem.enabled) {
-                                    optionElement.classList.remove("disabled");
+                                    listItem.classList.remove("menu-item-disabled");
                                 }
                                 else {
-                                    optionElement.classList.remove("disabled");
+                                    listItem.classList.add("menu-item-disabled");
                                 }
 
                                 if (menuItem.visible) {
-                                    optionElement.style.display = "block";
+                                    listItem.style.display = "block";
                                 }
                                 else {
-                                    optionElement.style.display = "none";
+                                    listItem.style.display = "none";
                                 }                                
+                      
+                                $scope.menuList.appendChild(listItem);
                                 
-                                if (menuItem.icon && menuItem.icon != "") {
-                                    optionElement.innerHTML = '<i class="fa fa-heart"></i>' + menuItem.label;
-                                }
-                                else {
-                                    optionElement.innerHTML = menuItem.label;
-                                } 
+                                var button = document.createElement('button');
+                                button.classList.add("menu-btn");
+                                listItem.appendChild(button);
                                 
-                                optionElement.addEventListener('click', function() {
+                                button.addEventListener('click', function() {
+                                    $scope.menuList.classList.remove('menu-show');
+                                    
                                     node.send({payload: command});
                                 });
                                 
-                                $scope.menuList.appendChild(optionElement);
+                                var innerHtml = "";
+                               
+                                if (menuItem.icon && menuItem.icon != "") {
+                                    innerHtml += '<i class="fa ' + menuItem.icon + '"></i>';
+                                }
+                                
+                                // TODO what if both icon and command are empty ...
+                                if (menuItem.command && menuItem.command != "") {
+                                    innerHtml += '<span class="menu-text">' + menuItem.command + '</span>';
+                                }
+                                
+                                button.innerHTML = innerHtml;
                             });
                         } 
                             
@@ -211,7 +324,7 @@ module.exports = function(RED) {
                             }
                             
                             // Show the menu to the user
-                            $scope.menuDiv.style.display = "block";
+                            $scope.menuList.classList.add('menu-show');
                         });
                     }
                 });
