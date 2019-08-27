@@ -22,39 +22,10 @@ module.exports = function(RED) {
         var configAsJson = JSON.stringify(config);
         
         // Based on the nice tutorial of Richard Umoffia (see https://dev.to/iamafro/how-to-create-a-custom-context-menu--5d7p)
-        // TODO font size doesn't work
         var html = String.raw`
-            <style>
-                .menu-icon { width: 120px; }
-                .menu {
-                    width: 120px;
-                    box-shadow: 0 4px 5px 3px rgba(0, 0, 0, 0.2);
-                    position: relative;
-                    display: none;
-
-                    .menu-options {
-                        list-style: none;
-                        padding: 10px 0;
-
-                        .menu-option {
-                            font-weight: 500;
-                            font-size: ` + config.fontSize + `px;
-                            padding: 10px 40px 10px 20px;
-                            cursor: pointer;
-
-                            &:hover {
-                                background: rgba(0, 0, 0, 0.2);
-                            }
-                        }
-                    }
-                }
-            </style>
-            <span id='span_'` + config.id + `' />
             <div id='div_` + config.id + `' ng-init='init(` + configAsJson + `)' class="menu" display='none';>
-                
             </div>
         `;
-                        
         return html;
     };
 
@@ -63,7 +34,6 @@ module.exports = function(RED) {
             node.error(RED._("heat-map.error.no-group")); // TODO
             return false;
         }
-        
         return true;
     }
 
@@ -137,12 +107,11 @@ module.exports = function(RED) {
                                 xp = scope.config.xCoordinate + scope.unit;
                                 yp  = scope.config.yCoordinate + scope.unit;
                             }
-                            return {left: xp, top: yp};
+                            return {x: xp, y: yp};
                         }
 
                         //https://stackoverflow.com/questions/14919894/getscript-but-for-stylesheets-in-jquery
                         function loadJavascriptAndCssFiles(urls, successCallback, failureCallback) {
-
                             $.when.apply($,
                                 $.map(urls, function(url) {
                                     if(url.endsWith(".css")) {
@@ -158,7 +127,6 @@ module.exports = function(RED) {
                             }).fail(function() {
                                 if (typeof failureCallback === 'function') failureCallback();
                             });
-                        
                         }
                         function createMenu(scope, selector, callback){
                             try {
@@ -170,16 +138,11 @@ module.exports = function(RED) {
                             var items = {};
                             console.log("createMenu")
                             scope.config.menuItems.forEach(function(menuItem) {
-
                                 items[menuItem.label] = {
                                     name: menuItem.label,
                                     icon: menuItem.icon,
-                                    disabled: menuItem.disabled,
-                                    // callback: function(itemKey,opt,e){
-                                    //     scope.send({payload: this, opt: opt, itemKey: itemKey});
-                                    // }
+                                    disabled: !menuItem.enabled
                                 }
-                                
                             });
 
                             var menuConfig = {
@@ -188,6 +151,7 @@ module.exports = function(RED) {
                                     $(scope.menuDivId).contextMenu("hide");
                                 },
                                 selector: selector,
+                                zIndex: 9000,
                                 trigger: "none",
                                 position: function(opt, x, y){
                                     opt.$menu.css({top: y, left: x, position: "absolute"});
@@ -211,17 +175,7 @@ module.exports = function(RED) {
                                     function(){
                                         //fail
                                     });
-
-
-                                // Load the JQuery plugin for a contectMenu (https://github.com/lai32290/TableHeadFixer).
-                                // See explantation about third party Js libraries in Node-Red on https://groups.google.com/d/msg/node-red/AgLNx0PpuBA/ZBfKYZ9GBAAJ                                
-                                // $.getScript('/ui_context_menu/lib/jquery.contextMenu.min.js').done(function(data, textStatus, jqxhr) {
-                                //     console.log("ui_context_menu: JQuery plugin loaded");
-                                //     $.contextMenu(menuConfig);
-                                //     callback();
-                                // });   
                             }
-                            //scope.menuList.appendChild(optionElement);
                         } 
                             
                         $scope.flag = true;
@@ -229,7 +183,6 @@ module.exports = function(RED) {
                         $scope.init = function (config) {
                             console.log("ui_context_menu: ui_contextmenu.initController > $scope.init()")
                             $scope.config   = config;
-
                             
                             if ($scope.config.unit === "perc") {
                                 $scope.unit = "%";
@@ -237,24 +190,7 @@ module.exports = function(RED) {
                             else { // "pix"
                                 $scope.unit = "px";
                             }
-                            
-                            $scope.menuDivId = "body > md-content"; //workaround!
-
-                            //THIS SHOULD WORK - but adding aconectMenu to dynamically added element 
-                            //results in an error client side
-                            //instead, I had to create it every time and attach it to a static element
-                            //and since there may be more than one contextMenu, I have to destry and re-create!!!
-                            // // When menu items available in the config screen, add those to the menu already
-                            // $scope.menuDivId = "menu_" + config.id;
-                            // var menuDiv = document.createElement('div');               
-                            // menuDiv.id = $scope.menuDivId;
-                            // menuDiv.style.cssText = 'position:absolute';
-                            // document.body.appendChild(menuDiv);                            
-                            // if ($scope.config.menuItems) {
-                            //     var pos = getPosition($scope);
-                            //     createMenu($scope, $scope.config.menuItems, $scope.menuDivId, pos.left, pos.top, function(){
-                            //     });
-                            // }
+                            $scope.menuDivId = "body > md-content"; //workaround as attaching to dynamic element results in error!
                         }
 
                         $scope.$watch('msg', function(msg) {
@@ -269,21 +205,12 @@ module.exports = function(RED) {
                                 return;
                             }
                                         
-                            var pos = getPosition($scope, msg);
+                            var pos = getPosition($scope, msg);//determine postion top/left
 
                             if ($scope.config.menu === "msg" && msg.menu) {
                                 // Show the menu items that have been specified in the input message
                                 createMenu($scope, $scope.menuDivId, function(){
-                                    //hack city:  set parent div h/w 0 & align to top/left 0 :) 
-                                    $scope.menuDiv.parentElement.style.width = "0px";
-                                    $scope.menuDiv.parentElement.style.height = "0px";
-                                    $scope.menuDiv.parentElement.style.left = "0px";
-                                    $scope.menuDiv.parentElement.style.top = "0px";
-                                    $scope.menuDiv.parentElement.style.zIndex = "9999";
-                                    $($scope.menuDiv.parentElement).removeClass("nr-dashboard-template");
-                                    $scope.menuDiv.parentElement.style.display = "";//show it
-                                    // Show the menu to the user
-                                    $($scope.menuDivId).contextMenu({x:pos.left,y:pos.top}); 
+                                    $($scope.menuDivId).contextMenu({x:pos.left,y:pos.top}); // Show the menu
                                 })                       
                             } else {
                             
@@ -293,9 +220,8 @@ module.exports = function(RED) {
                                 //and since there may be more than one contextMenu, I have to destry and re-create!!!
                                 // // When menu items available in the config screen, add those to the menu already
                                 if ($scope.config.menuItems) {
-                                    var pos = getPosition($scope);
                                     createMenu($scope, $scope.menuDivId, function(){
-                                        $($scope.menuDivId).contextMenu({x:pos.left,y:pos.top}); 
+                                        $($scope.menuDivId).contextMenu({x:pos.x,y:pos.y}); // Show the menu
                                     });
                                 }
                                                                 
