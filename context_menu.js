@@ -95,6 +95,7 @@ module.exports = function(RED) {
                         // Remark: all client-side functions should be added here!  
                         // If added above, it will be server-side functions which are not available at the client-side ...
                         console.log("ui_context_menu: ui_contextmenu.initController()")
+
                         function getPosition(scope, msg){
                             var xp = "0px",yp = "0px";
                             if (scope.config.position === "msg" && msg && msg.position) {
@@ -191,6 +192,17 @@ module.exports = function(RED) {
                                 $scope.unit = "px";
                             }
                             $scope.menuDivId = "body > md-content"; //workaround as attaching to dynamic element results in error!
+                            
+                            //although this is a dashboard widget, we dont want or need it to be displayed 
+                            //TODO: not working!
+                            var div  = document.getElementById("div_" + config.id);
+                            div.parentElement.style.width = "0px";
+                            div.parentElement.style.height = "0px";
+                            div.parentElement.style.left = "0px";
+                            div.parentElement.style.top = "0px";
+                            $(div.parentElement).removeClass("nr-dashboard-template");
+                            div.parentElement.style.display = "hidden";
+                      
                         }
 
                         $scope.$watch('msg', function(msg) {
