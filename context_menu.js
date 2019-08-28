@@ -19,13 +19,10 @@ module.exports = function(RED) {
 
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
-        var configAsJson = JSON.stringify(config);
-        
-        // Based on the nice tutorial of Richard Umoffia (see https://dev.to/iamafro/how-to-create-a-custom-context-menu--5d7p)
-        var html = String.raw`
-            <div id='div_` + config.id + `' ng-init='init(` + configAsJson + `)' class="menu" display='none';>
-            </div>
-        `;
+        var configAsJson = JSON.stringify(config);  
+        var html = " \
+            <div id='div_" + config.id + "' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
+            </div> ";
         return html;
     };
 
@@ -87,11 +84,47 @@ module.exports = function(RED) {
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
-                        if (orig) {
-                            return orig.msg;
+                        //debugger;
+                        try {
+                            if (!orig || !orig.msg) {
+                                return;//TODO: what to do if empty? Currently, halt flow by returning nothing
+                            }
+                            var newMsg = {
+                                menuId: orig.msg.menuItem.id,
+                                menuindex: orig.msg.menuItem.index,
+                                topic: orig.msg.menuItem.topic,
+                                payload: orig.msg.menuItem.payload
+                            };
+                            RED.util.evaluateNodeProperty(orig.msg.menuItem.payload,orig.msg.menuItem.payloadType,node,orig.msg,(err,value) => {
+                                if (err) {
+                                    throw err;//is this an erro object? or should I create new Error(err)?
+                                } else {
+                                    //setResult(newMsg, node.outputField, value); 
+                                    newMsg.payload = value;
+                                }
+                            }); 
+                            return newMsg;
+                        } catch (error) {
+                            node.error(error);
                         }
+                        
                     },
                     initController: function($scope, events) {
+
+                        //IE
+                        if (!String.prototype.endsWith) {
+                            String.prototype.endsWith = function(searchString, position) {
+                                var subjectString = this.toString();
+                                if (typeof position !== 'number' || !isFinite(position) 
+                                    || Math.floor(position) !== position || position > subjectString.length) {
+                                  position = subjectString.length;
+                                }
+                                position -= searchString.length;
+                                var lastIndex = subjectString.indexOf(searchString, position);
+                                return lastIndex !== -1 && lastIndex === position;
+                            };
+                          }
+
                         // Remark: all client-side functions should be added here!  
                         // If added above, it will be server-side functions which are not available at the client-side ...
                         console.log("ui_context_menu: ui_contextmenu.initController()")
@@ -137,18 +170,25 @@ module.exports = function(RED) {
 
                             // Make sure there are no previous menu options available
                             var items = {};
-                            console.log("createMenu")
+                            var index = 0;
+                            console.log("createMenu:", scope.config.menuItems)
                             scope.config.menuItems.forEach(function(menuItem) {
-                                items[menuItem.label] = {
+                                var id=menuItem.id || index;
+                                items[id] = {
+                                    index: index,
+                                    id: menuItem.id,
                                     name: menuItem.label,
                                     icon: menuItem.icon,
-                                    disabled: !menuItem.enabled
+                                    disabled: !menuItem.enabled,
+                                    menuItem: menuItem
                                 }
+                                index++;
                             });
 
                             var menuConfig = {
                                 callback: function(key, options) {
-                                    scope.send({payload: key});
+                                    let item = options.items[key];
+                                    scope.send({menuItem: item.menuItem});                                    
                                     $(scope.menuDivId).contextMenu("hide");
                                 },
                                 selector: selector,
@@ -162,6 +202,7 @@ module.exports = function(RED) {
 
                             if($.contextMenu){
                                 $.contextMenu(menuConfig);
+                                $(".context-menu-list").css("font-size", (scope.config.fontSize || 16) + "px")
                                 callback();
                                 return;
                             } else {
@@ -171,6 +212,7 @@ module.exports = function(RED) {
                                         //success
                                         console.log("ui_context_menu: JQuery plugin loaded");
                                         $.contextMenu(menuConfig);
+                                        $(".context-menu-list").css("font-size", (scope.config.fontSize || 16) + "px")
                                         callback();
                                     },
                                     function(){

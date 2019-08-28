@@ -737,36 +737,71 @@
                 group: "#node-input-group"
             });
 
+            const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
+            const defaultPayloadType = "str";
+
             // Create a table of menu items
-            var menuItemList = $("#node-input-menuItems-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:12%; margin-left:5px; display: inline-grid'><b>Value</b></div><div style='width:25%; display: inline-grid'><b>Icon</b></div><div style='width:30%; display: inline-grid'><b>Label</b></div><div style='width:10%; display: inline-grid'><b>Visible</b></div><div style='width:10%; display: inline-grid'><b>Enabled</b></div>")),
+            var menuItemList = $("#node-input-menuItems-container").css('min-height','150px').css('min-width','500px').editableList({
+                header: $("<div>").css({padding:"6px"}).append($.parseHTML(`
+                    <div style='width:15%; margin-left:25px; display: inline-grid'><b>ID</b></div> 
+                    <div style='width:15%; display: inline-grid'><b>Label</b></div>  
+                    <div style='width:15%; display: inline-grid'><b>Icon</b></div>  
+                    <div style='width:15%; display: inline-grid'><b>Topic</b></div>  
+                    <div style='width:25%; display: inline-grid'><b>Payload</b></div>  
+                    `)),
                 addItem: function(container, i, menuItem) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
+
+                    $('<i style="color:#eee; cursor:move; margin-left:3px;" class="red-ui-editableList-item-handle fa fa-bars node-input-menuItem-handle"></i>').appendTo(row);
+
+                     //Column 1 : Add an input field (type string) to the new row, that represents the command 
+                     var idField = $('<input/>',{class:"node-input-menuItem-id",type:"text",placeholder:"id"}).css({"width":"15%","margin-left":"25px","margin-right":"5px"}).appendTo(row);
+                     idField.val(menuItem.id);
+
+                    // Column 2 : Add an input field (type string) to the new row, that represents the label 
+                    var labelField = $('<input/>',{class:"node-input-menuItem-label",type:"text",placeholder:"label"}).css({"width":"15%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    labelField.val(menuItem.label);
                     
-                    // Column 1 : Add an input field (type string) to the new row, that represents the command 
-                    var commandField = $('<input/>',{class:"node-input-menuItem-command",type:"text",placeholder:"command"}).css({"width":"12%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    commandField.val(menuItem.command);
-                    
-                    // Column 2 : Add an input field (type string) to the new row, that represents the icon (css class name) 
+                    // Column 3 : Add an input field (type string) to the new row, that represents the icon (css class name) 
                     // TODO this has to become an autocomplete field ...
-                    var iconField = $('<input/>',{class:"node-input-menuItem-icon",type:"text",placeholder:"fa-..."}).css({"width":"25%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var iconField = $('<input/>',{class:"node-input-menuItem-icon",type:"text",placeholder:"fa-..."}).css({"width":"15%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     iconField.autocomplete({
                         source: iconCssClassNames
                     });
                     iconField.val(menuItem.icon);
 
-                    // Column 3 : Add an input field (type string) to the new row, that represents the label 
-                    var labelField = $('<input/>',{class:"node-input-menuItem-label",type:"text",placeholder:"label"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    labelField.val(menuItem.label);
-                    
-                    // Column 4 : Add an input field (type string) to the new row, that represents the icon (css class name) 
-                    // TODO this has to become an autocomplete field ...
-                    var visibleField = $('<input/>',{class:"node-input-menuItem-visible",type:"checkbox"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
+                    var topicField = $('<input/>',{class:"node-input-menuItem-topic",type:"text",placeholder:"Topic"}).css({"width":"15%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    topicField.val(menuItem.topic);
+
+                    // Column 5 : Add a input field (type string) to the new row, that represents the msg.payload content 
+                    var payloadField = $('<input/>',{class:"node-input-menuItem-payload",type:"text",placeholder:"Payload"}).css({"width":"25%","margin-left":"5px"}).appendTo(row);
+                                        
+                    // hidden item (payloadType)
+                    var payloadTypeField = $('<input/>',{class:"node-input-menuItem-payloadType",type:"hidden"}).appendTo(row);
+                    var payloadType = supportedPayloadTypes.includes(menuItem.payloadType) ? menuItem.payloadType : defaultPayloadType;
+                    payloadField.typedInput({
+                        default: defaultPayloadType,
+                        typeField: payloadTypeField,
+                        types: supportedPayloadTypes
+                    });
+                    payloadField.typedInput("type", payloadType);              
+                    payloadField.typedInput("value", menuItem.payload);   
+
+                    //new line
+                    var line2 = $('<div/>').css({"padding": "6px"}).appendTo(row);
+
+                    // Line 2, Column 1
+                    var visibleFieldId = "menuItemVisible" + i;
+                    var visibleField = $('<input/>',{id: visibleFieldId, class:"node-input-menuItem-visible",type:"checkbox"}).css({"margin-left": "20px","margin-right": "5px", "vertical-align": "top", "width": "auto"}).appendTo(line2);
+                    var visibleLabelField = $('<label/>',{for: visibleFieldId }).css({"margin-left": "0px", "vertical-align": "top"}).text("Visible").appendTo(line2);
                     visibleField.prop('checked', menuItem.visible);
 
-                    // Column 5 : Add an input field (type string) to the new row, that represents the label 
-                    var enabledField = $('<input/>',{class:"node-input-menuItem-enabled",type:"checkbox"}).css({"width":"10%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // Line 2, Column 7  
+                    var enabledFieldId = "menuItemEnabled" + i;
+                    var enabledField = $('<input/>',{id: enabledFieldId, class:"node-input-menuItem-enabled",type:"checkbox"}).css({"margin-left": "0px","margin-right": "5px", "vertical-align": "top", "width": "auto"}).appendTo(line2);
+                    var enabledLabelField = $('<label/>',{for: enabledFieldId }).css({"margin-left": "0px", "vertical-align": "top"}).text("Enabled").appendTo(line2);
                     enabledField.prop('checked', menuItem.enabled);
                 },
                 removable: true
@@ -775,7 +810,7 @@
             // Show all the menu items (stored in this node) into the editableList
             if (this.menuItems) {
                 this.menuItems.forEach(function (menuItem, index) {
-                    menuItemList.editableList('addItem', {command:menuItem.command, icon:menuItem.icon, label:menuItem.label, visible:menuItem.visible, enabled:menuItem.enabled});
+                    menuItemList.editableList('addItem', {id:menuItem.id, icon:menuItem.icon, label:menuItem.label, topic:menuItem.topic, payload:menuItem.payload, payloadType:menuItem.payloadType, visible:menuItem.visible, enabled:menuItem.enabled});
                 });
             }
             
@@ -815,6 +850,14 @@
                 }
             });
             $("#node-input-menu").change();
+
+
+            $( "#node-input-menuItems-container" ).sortable({
+                axis: "y",
+                handle:".node-input-menuItem-handle",
+                cursor: "move"
+            });
+
         },
         oneditsave: function() {
             var node = this;
@@ -824,19 +867,43 @@
             var menuItemsList = $("#node-input-menuItems-container").editableList('items');
             menuItemsList.each(function(i) {
                 var menuItem = $(this);
-                var command = menuItem.find(".node-input-menuItem-command").val();
-                var icon    = menuItem.find(".node-input-menuItem-icon").val();
-                var label   = menuItem.find(".node-input-menuItem-label").val();
-                var visible = menuItem.find(".node-input-menuItem-visible").is(":checked");
-                var enabled = menuItem.find(".node-input-menuItem-enabled").is(":checked");
-                
-                node.menuItems.push({command:command, icon:icon, label:label, visible:visible, enabled:enabled});
+                var o = {
+                    id: menuItem.find(".node-input-menuItem-id").val(), 
+                    icon: menuItem.find(".node-input-menuItem-icon").val(), 
+                    label: menuItem.find(".node-input-menuItem-label").val(), 
+                    topic: menuItem.find(".node-input-menuItem-topic").val(), 
+                    payload: menuItem.find(".node-input-menuItem-payload").val(), 
+                    payloadType: menuItem.find(".node-input-menuItem-payloadType").val(), 
+                    visible: menuItem.find(".node-input-menuItem-visible").is(":checked"), 
+                    enabled: menuItem.find(".node-input-menuItem-enabled").is(":checked")
+                }                
+                node.menuItems.push(o);
             });
+        },
+        oneditresize: function(){
+            console.log("context_menu:oneditresize");
+            var dlg = $("#dialog-form");
+            var height = dlg.height() - 5;
+            var expandRow = dlg.find('.form-row-auto-height');
+            if(expandRow && expandRow.length){
+                let childRows = dlg.find('.form-row:not(.form-row-auto-height)');
+                for (var i=0; i<childRows.size(); i++) {
+                    var cr = $(childRows[i]);
+                    if(cr.is(":visible"))
+                        height -= cr.outerHeight(true);
+                }
+                let ol = $(expandRow.find(".red-ui-editableList-list"));
+                if(ol && ol.length){
+                    ol.editableList("height",height);
+                } else {
+                    expandRow.css("height",height+"px");
+                }
+            } 
         }
     });
 </script>
 
-<script type="text/x-red" data-template-name="ui_context_menu">
+<script type="text/html" data-template-name="ui_context_menu">
     <div class="form-row" id="template-row-group">
         <label for="node-input-group"><i class="fa fa-table"></i> Group</span></label>
         <input type="text" id="node-input-group">
@@ -851,7 +918,6 @@
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
-    </br>
     <div class="form-row">
         <label for="node-input-fontSize"><i class="fa fa-font"></i> Font size</label>
         <input id="node-input-fontSize" type="number" style="width: 60px">
@@ -888,12 +954,11 @@
             <option value="msg">Message based</option>
         </select>
     </div>
-    </br>
     <div class="form-row form-row-auto-height contextmenu-menuitems-row">
         <!-- Table with menu items -->
         <ol id="node-input-menuItems-container"></ol>
     </div>
 </script>
-<script type="text/x-red" data-help-name="ui_context_menu">
+<script type="text/html" data-help-name="ui_context_menu">
     <p>A Node Red node to show a popup context menu inside the dashboard.</p>
 </script>
