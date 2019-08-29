@@ -75,8 +75,8 @@ module.exports = function(RED) {
                         }
             
                         if (config.menu === "msg") {
-                            if (!msg.menu || !Array.isArray(msg.menu)) {
-                                node.error("When using message based menu items, the msg.menu should contain an array of menu items");
+                            if (!msg.menu || typeof msg.menu != "object" ) {
+                                node.error("When using message based menu items, the msg.menu should contain an object containing menu items");
                                 msg.position = null;
                             }
                         }
@@ -110,6 +110,9 @@ module.exports = function(RED) {
                         
                     },
                     initController: function($scope, events) {
+                        // Remark: all client-side functions should be added here!  
+                        // If added above, it will be server-side functions which are not available at the client-side ...
+                        console.log("ui_context_menu: ui_contextmenu.initController()")
 
                         //IE
                         if (!String.prototype.endsWith) {
@@ -123,11 +126,8 @@ module.exports = function(RED) {
                                 var lastIndex = subjectString.indexOf(searchString, position);
                                 return lastIndex !== -1 && lastIndex === position;
                             };
-                          }
-
-                        // Remark: all client-side functions should be added here!  
-                        // If added above, it will be server-side functions which are not available at the client-side ...
-                        console.log("ui_context_menu: ui_contextmenu.initController()")
+                        }
+                        
                         function getPosition(scope, msg){
                             var xp = "0px",yp = "0px";
                             if (scope.config.position === "msg" && msg && msg.position) {
@@ -161,33 +161,47 @@ module.exports = function(RED) {
                                 if (typeof failureCallback === 'function') failureCallback();
                             });
                         }
-                        function createMenu(scope, selector, callback){
+                        function findMenuItemByKey(o, id) {
+                            //Early return
+                            if( o[id] && typeof o[id] == "object" ){
+                              return o[id];
+                            }
+                            var result, p; 
+                            if(o.items){
+                                for (p in o.items) {
+                                    if(typeof o[p] === "object" && o[p].items){
+                                        result = findMenuItemByKey(o[p].items, id);
+                                    if(result){
+                                        return result;
+                                    }
+                                    }
+                                }
+                            }
+                            return result;
+                        }
+                        function createMenu(scope, menuItems, selector, callback){
                             try {
                                 $.contextMenu("destroy",selector);
                             } catch (error) {
                             }
 
-                            // Make sure there are no previous menu options available
-                            var items = {};
-                            var index = 0;
-                            console.log("createMenu:", scope.config.menuItems)
-                            scope.config.menuItems.forEach(function(menuItem) {
-                                var id=menuItem.id || index;
-                                items[id] = {
-                                    index: index,
-                                    id: menuItem.id,
-                                    name: menuItem.label,
-                                    icon: menuItem.icon,
-                                    disabled: !menuItem.enabled,
-                                    menuItem: menuItem
-                                }
-                                index++;
-                            });
-
                             var menuConfig = {
                                 callback: function(key, options) {
-                                    let item = options.items[key];
-                                    scope.send({menuItem: item.menuItem});                                    
+                                    let item = findMenuItemByKey(options.items, key) || {};
+                                    let menuItem = {
+                                        index: item.index,
+                                        id: item.id || key,
+                                        name: item.name,
+                                        icon: item.icon,
+                                        disabled: item.disabled || !item.enabled,
+                                        enabled: item.enabled || !item.disabled,
+                                        visible: item.visible,
+                                        label: item.label || item.name,
+                                        payload: item.payload || key,
+                                        payloadType: item.payload || "str",
+                                        topic:  item.topic || key
+                                    }
+                                    scope.send({menuItem: menuItem});                                    
                                     $(scope.menuDivId).contextMenu("hide");
                                 },
                                 selector: selector,
@@ -196,7 +210,7 @@ module.exports = function(RED) {
                                 position: function(opt, x, y){
                                     opt.$menu.css({top: y, left: x, position: "absolute"});
                                 },
-                                items: items
+                                items: menuItems
                             };
 
                             if($.contextMenu){
@@ -205,7 +219,9 @@ module.exports = function(RED) {
                                 callback();
                                 return;
                             } else {
-                                var urls = ['/ui_context_menu/lib/jquery.contextMenu.min.js', '/ui_context_menu/lib/jquery.contextMenu.min.css']
+                                var urls = ['/ui_context_menu/lib/jquery.contextMenu.min.css',
+                                            '/ui_context_menu/lib/jquery.ui.position.min.js',
+                                            '/ui_context_menu/lib/jquery.contextMenu.min.js'];
                                 loadJavascriptAndCssFiles(urls, 
                                     function(){
                                         //success
@@ -233,10 +249,12 @@ module.exports = function(RED) {
                                 $scope.unit = "px";
                             }
                             $scope.menuDivId = "body > md-content"; //workaround as attaching to dynamic element results in error!
+                             
                         }
 
                         $scope.$watch('msg', function(msg) {
                             console.log("ui_context_menu: ui_contextmenu.initController > $scope.$watch('msg'...)")
+                            var scope = $scope;
 
                             // Ignore undefined messages.
                             if (!msg) {
@@ -248,26 +266,53 @@ module.exports = function(RED) {
                             }
                                         
                             var pos = getPosition($scope, msg);//determine postion top/left
-
-                            if ($scope.config.menu === "msg" && msg.menu) {
-                                // Show the menu items that have been specified in the input message
-                                createMenu($scope, $scope.menuDivId, function(){
-                                    $($scope.menuDivId).contextMenu({x:pos.left,y:pos.top}); // Show the menu
-                                })                       
-                            } else {
                             
-                                //adding a contextMenu to dynamically added element 
-                                //results in an error client side
-                                //instead, I had to create it every time and attach it to a static element
-                                //and since there may be more than one contextMenu, I have to destry and re-create!!!
-                                // // When menu items available in the config screen, add those to the menu already
-                                if ($scope.config.menuItems) {
-                                    createMenu($scope, $scope.menuDivId, function(){
-                                        $($scope.menuDivId).contextMenu({x:pos.x,y:pos.y}); // Show the menu
-                                    });
-                                }
-                                                                
-                            }
+                            if(scope.config.menu === "msg"){
+                                //As msg.menu is source - just assign it to scope.config.contextmenuItems
+                                scope.config.contextmenuItems = msg.menu;
+                            } else if (scope.config.menuItems && scope.config.menu === "fixed" && !scope.config.contextmenuItems){
+                                //As the menu is fixed items, generate a compatable contextmenuItems object from scope.config.menuItems
+                                scope.config.contextmenuItems = {};
+                                var index = 0;
+                                scope.config.menuItems.forEach(function(menuItem) {
+                                    var id=menuItem.id || index;
+                                    if(menuItem.label.startsWith("--")){
+                                        scope.config.contextmenuItems[id] = "---------"
+                                    } else {
+                                        scope.config.contextmenuItems[id] = {
+                                            index: index,
+                                            id: menuItem.id,
+                                            name: menuItem.label,
+                                            icon: menuItem.icon,
+                                            disabled: !menuItem.enabled,
+                                            enabled: menuItem.enabled,
+                                            visible: menuItem.visible,
+                                            label: menuItem.label,
+                                            payload: menuItem.payload,
+                                            payloadType: menuItem.payload,
+                                            topic:  menuItem.topic
+                                        }
+                                    }
+                                    index++;
+                                });
+                            } 
+
+                            //adding a contextMenu to dynamically added element 
+                            //results in an error client side
+                            //instead, I had to create it every time and attach it to a static element
+                            //and since there may be more than one contextMenu, I have to destry and re-create!!!
+                            createMenu(scope, scope.config.contextmenuItems, scope.menuDivId, function () {
+                                $(scope.menuDivId).contextMenu({ x: pos.x, y: pos.y }); // Show the menu
+                            });
+
+                            // if (scope.config.menu === "msg") {
+                            //     // Show the menu items that have been specified in the input message
+                            //     createMenu(scope,  msg.menu, scope.menuDivId, function(){
+                            //         $(scope.menuDivId).contextMenu({x:pos.left,y:pos.top}); // Show the menu
+                            //     })                       
+                            // } else {
+                            //     console.log("no items in $scope.config.contextmenuItems")                        
+                            // }
                         });                        
                     }
                 });
