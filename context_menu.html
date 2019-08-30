@@ -12,6 +12,25 @@
 -->
 
 <script type="text/javascript">
+    function updateEditorLayout(){
+        var dlg = $("#dialog-form");
+        var height = dlg.height() - 5;
+        var expandRow = dlg.find('.form-row-auto-height');
+        if(expandRow && expandRow.length){
+            let childRows = dlg.find('.form-row:not(.form-row-auto-height)');
+            for (var i=0; i<childRows.size(); i++) {
+                var cr = $(childRows[i]);
+                if(cr.is(":visible"))
+                    height -= cr.outerHeight(true);
+            }
+            let ol = $(expandRow.find(".red-ui-editableList-list"));
+            if(ol && ol.length){
+                ol.editableList("height",height);
+            } else {
+                expandRow.css("height",height+"px");
+            }
+        } 
+    }
     RED.nodes.registerType('ui_context_menu',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -837,6 +856,7 @@
                 else {
                     $(".contextmenu-position-row").hide();
                 }
+                updateEditorLayout();
             });
             $("#node-input-position").change();
             
@@ -881,24 +901,7 @@
             });
         },
         oneditresize: function(){
-            console.log("context_menu:oneditresize");
-            var dlg = $("#dialog-form");
-            var height = dlg.height() - 5;
-            var expandRow = dlg.find('.form-row-auto-height');
-            if(expandRow && expandRow.length){
-                let childRows = dlg.find('.form-row:not(.form-row-auto-height)');
-                for (var i=0; i<childRows.size(); i++) {
-                    var cr = $(childRows[i]);
-                    if(cr.is(":visible"))
-                        height -= cr.outerHeight(true);
-                }
-                let ol = $(expandRow.find(".red-ui-editableList-list"));
-                if(ol && ol.length){
-                    ol.editableList("height",height);
-                } else {
-                    expandRow.css("height",height+"px");
-                }
-            } 
+            updateEditorLayout()
         }
     });
 </script>
@@ -923,7 +926,7 @@
         <input id="node-input-fontSize" type="number" style="width: 60px">
         <span>px</span>
     </div>
-    <div class="form-row">
+    <!-- <div class="form-row">
         <label for="node-input-unit"><i class="fa fa-cog"></i> Units</label>
         <select id="node-input-unit">
             <option value="perc">Percentages</option> 
@@ -936,8 +939,23 @@
             <option value="fixed">Fixed</option> 
             <option value="msg">Message based</option>
         </select>
+    </div> -->
+
+    <div class="form-row">
+        <label for="node-input-position"><i class="fa fa-crosshairs"></i> Position</label>
+        <select id="node-input-position" style="width:140px">
+            <option value="fixed">Fixed</option> 
+            <option value="msg">Message based</option>
+        </select>
+
+        <label for="node-input-unit" style="padding-left:20px; width: 60px"><i class="fa fa-cog"></i> Units</label>
+        <select id="node-input-unit" style="width:120px">
+            <option value="perc">Percentages</option> 
+            <option value="pix">Pixels</option>
+        </select>
     </div>
-    <div class="form-row contextmenu-position-row">
+
+    <!-- <div class="form-row contextmenu-position-row">
         <label for="node-input-xCoordinate"><i class="fa fa-arrows-h"></i> X coordinate</label>
         <input id="node-input-xCoordinate" type="number" style="width: 60px">
         <span id="node-input-xCoordinate-unit">px</span>
@@ -946,7 +964,17 @@
         <label for="node-input-yCoordinate"><i class="fa fa-arrows-v"></i> Y coordinate</label>
         <input id="node-input-yCoordinate" type="number" style="width: 60px">
         <span id="node-input-yCoordinate-unit">px</span>
+    </div> -->
+    <div class="form-row contextmenu-position-row" style="display: block;">
+        <label for="node-input-xCoordinate"><i class="fa fa-arrows-h"></i> X coordinate</label>
+        <input id="node-input-xCoordinate" type="number" style="width: 60px" dir="">
+        <span id="node-input-xCoordinate-unit">px</span>
+    
+        <label for="node-input-yCoordinate" style="padding-left:20px"><i class="fa fa-arrows-v"></i> Y coordinate</label>
+        <input id="node-input-yCoordinate" type="number" style="width: 60px" dir="">
+        <span id="node-input-yCoordinate-unit">px</span>
     </div>
+
     <div class="form-row">
         <label for="node-input-menu"><i class="fa fa-list-alt"></i> Menu</label>
         <select id="node-input-menu">
@@ -961,4 +989,119 @@
 </script>
 <script type="text/html" data-help-name="ui_context_menu">
     <p>A Node Red node to show a popup context menu inside the dashboard.</p>
+    <h3>General Properties...</h3>
+    <dl class="message-properties">
+        <h4>Group</h4>
+        <div style="padding-left: 15px">
+            Where you want the SVG to be displayed on your dashboard.
+        </div>
+        <h4>Size</h4>
+        <div style="padding-left: 15px">
+            The size of the widget on the dashboard
+        </div>    
+        <h4>Name</h4>
+        <div style="padding-left: 15px">
+            The name of this node 
+        </div>
+        
+        <h4>Font size</h4>
+        <div style="padding-left: 15px">
+            The font size of the menu items 
+        </div>
+        
+        <h4>Position and Units</h4>
+        <div style="padding-left: 15px">
+            This determines how the menu will be positioned.
+            <p>Position...</p>
+            <ul>
+                <li>Message Based - when selected, <code>msg</code>must contain a <code>position</code>object containing <code>.x</code> and <code>.y</code></li>
+                <li>Fixed - when selected, enter the coordinates into the X Coordinate and Y Coordinate inputs below</li>
+            </ul>
+            <p>Units...</p>
+            <ul>
+                <li>Percentages - when selected, X and Y coordinates are percentage based positioning</li>
+                <li>Pixels - when selected, X and Y coordinates are pixel based positioning</li>
+            </ul>
+        </div>
+        
+        <h4>Menu</h4>
+        <div style="padding-left: 15px">
+            The menu contents.
+            <ul>
+                <li>Message Based - when selected, <code>msg</code>must contain a <code>menu</code> object containing the menu items</li>
+                <li>Fixed - when selected, enter the menu into list below</li>
+            </ul>
+            <p>Fixed menu options...</p>
+            <p>
+                <ul>
+                    <li>ID - the id of the menu item</li>
+                    <li>Label - what is displayed in the menu</li>
+                    <li>Icon - the font-awsome icon to display</li>
+                    <li>Topic - the <code>topic</code> to send in the output <code>msg</code></li>
+                    <li>Payload - the <code>payload</code> to send in the output <code>msg</code></li>
+                </ul>
+            </p>
+            <p><b>Message Based menu details...</b></p>
+            <p> <code>msg.menu</code> should contain an object with items for the menu structure (<a href="https://swisnl.github.io/jQuery-contextMenu/docs/items.html" target="_blank" rel="noopener noreferrer">reference</a>)  e.g.<br>
+<pre style="white-space: pre">
+    {
+        "edit": {
+            "name": "Edit",
+            "icon": "fa-edit",
+            "topic": "edit",
+            "payload": [1,2,3,4,5],
+            "payloadType": "JSON"
+        },
+        "cut": {
+            "name": "Cut",
+            "icon": "fa-cut",
+            "topic": "cut",
+            "payload": "cut",
+            "payloadType": "str"
+        },
+        "sep1": "---------",
+        "quit": {
+            "name": "Quit",
+            "icon": "fa-quit"
+        },
+        "sep2": "---------",
+        "fold1": {
+            "name": "Sub group",
+            "items": {
+                "fold1-key1": { "name": "fred" },
+                "fold1-key2": { "name": "george" }
+            }
+        }
+    }    
+</pre>
+                    
+
+            </p>
+        </div>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
+        <dd style="display: none">
+            It is possible to dynamically enable/disable or show.hide menu items - <b>TODO</b>   
+        </dd>
+        <dd>
+            <ul>
+                <li>If "Menu" option is set to "Message based", an object containing the menu structure must be present in <code>msg.menu</code>. See Message Based menu details above</li>
+                <li>If "Position" option is set to "Message based", then object <code>msg.position</code> must be present and must contain <code>.x</code> and <code>.y</code> number properties</li>
+                <li>Any message sent to the node will trigger it to open</li>
+            </ul>            
+        </dd>
+    </dl>
+        
+    <h3>Output</h3>
+    <dl class="message-properties">
+        <dt><i>payload</i> <span class="property-type">number|string|boolean|object|buffer</span></dt>
+        <dd><code>msg.topic</code> will contain whatever is configured in 'topic'</dd>
+        <dd><code>msg.payload</code> will contain whatever is configured in 'payload'</dd>
+        <dd>if <code>topic</code> is not configured for the menu item, it will default to a string containing the key of clicked item</dd>
+        <dd>if <code>payload</code> is not configured for the menu item, it will default a string containing the key of clicked item</dd>
+    </dl>
+
 </script>
