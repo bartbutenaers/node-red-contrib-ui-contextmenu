@@ -51,7 +51,7 @@
             height: {value: 0},
             fontSize: {value: 16},
             position: {value: "fixed"},
-            unit: {value: "perc"},
+            //unit: {value: "perc"},
             xCoordinate: {value: 50},
             yCoordinate: {value: 50},
             menu: {value: "fixed"},
@@ -833,18 +833,18 @@
                 });
             }
             
-            // Only show the X/Y coordinate fields, when the position is "fixed"
-            $("#node-input-unit").change(function() {
-                if ($("#node-input-unit").val() === "pix") {
-                    $("#node-input-xCoordinate-unit").text("px");
-                    $("#node-input-yCoordinate-unit").text("px");
-                }
-                else {
-                    $("#node-input-xCoordinate-unit").text("%");
-                    $("#node-input-yCoordinate-unit").text("%");
-                }
-            });
-            $("#node-input-unit").change();
+            // // Only show the X/Y coordinate fields, when the position is "fixed"
+            // $("#node-input-unit").change(function() {
+            //     if ($("#node-input-unit").val() === "pix") {
+            //         $("#node-input-xCoordinate-unit").text("px");
+            //         $("#node-input-yCoordinate-unit").text("px");
+            //     }
+            //     else {
+            //         $("#node-input-xCoordinate-unit").text("%");
+            //         $("#node-input-yCoordinate-unit").text("%");
+            //     }
+            // });
+            // $("#node-input-unit").change();
             
             id="node-input-xCoordinate-unit"
             
@@ -948,11 +948,11 @@
             <option value="msg">Message based</option>
         </select>
 
-        <label for="node-input-unit" style="padding-left:20px; width: 60px"><i class="fa fa-cog"></i> Units</label>
+        <!-- <label for="node-input-unit" style="padding-left:20px; width: 60px"><i class="fa fa-cog"></i> Units</label>
         <select id="node-input-unit" style="width:120px">
             <option value="perc">Percentages</option> 
             <option value="pix">Pixels</option>
-        </select>
+        </select> -->
     </div>
 
     <!-- <div class="form-row contextmenu-position-row">
