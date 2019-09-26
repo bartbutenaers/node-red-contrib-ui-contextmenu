@@ -84,7 +84,6 @@ module.exports = function(RED) {
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
-                        //debugger;
                         try {
                             if (!orig || !orig.msg) {
                                 return;//TODO: what to do if empty? Currently, halt flow by returning nothing
@@ -161,32 +160,17 @@ module.exports = function(RED) {
                                 if (typeof failureCallback === 'function') failureCallback();
                             });
                         }
-                        function findMenuItemByKey(o, id) {
-                            //Early return
-                            if( o[id] && typeof o[id] == "object" ){
-                              return o[id];
-                            }
-                            var result, p; 
-                            if(o.items){
-                                for (p in o.items) {
-                                    if(typeof o[p] === "object" && o[p].items){
-                                        result = findMenuItemByKey(o[p].items, id);
-                                    if(result){
-                                        return result;
-                                    }
-                                    }
-                                }
-                            }
-                            return result;
-                        }
-                        
-                        function createMenu(scope, menuItems, callback){
+
+                        $scope.flag = true;
+
+                        $scope.init = function (config) {
+                            console.log("ui_context_menu: ui_contextmenu.initController > $scope.init()")
+                            $scope.config = config;
+                            $scope.contextmenuItems = null;
                             
-                            var menu; 
                             var options = {
                                 callback: function(evt, item) {
-                                    debugger
-                                    //let item = findMenuItemByKey(options.items, key) || {};
+
                                     let menuItem = {
                                         index: item.index,
                                         id: item.id || item.path,
@@ -202,52 +186,41 @@ module.exports = function(RED) {
                                     scope.send({menuItem: menuItem});                                    
                                 }
                             }
-                            if(scope.config.fontSize)
-                                options.fontSize = scope.config.fontSize + "px";
-
+                            
+                            if($scope.config.fontSize) {
+                                options.fontSize = $scope.config.fontSize + "px";
+                            }
+                            
                             try {
                                 if(window.ContextMenu){
-                                    menu = new ContextMenu(menuItems,options); 
-                                    callback(menu);   
-                                    return;
-                                } else {
+                                    $scope.contextMenu = new ContextMenu([],options); 
+                                }
+                                else {
                                     var urls = [
-                                        '/ui_context_menu/lib/contextMenu.js',
-                                        '/ui_context_menu/lib/contextMenu.css'
+                                        '/ui_context_menu/lib/contextmenu.js',
+                                        '/ui_context_menu/lib/contextmenu.css'
                                     ];
                                     loadJavascriptAndCssFiles(urls, 
                                         function(){
                                             //success
-                                            menu = new ContextMenu(menuItems,options); 
-                                            callback(menu);   
+                                            $scope.contextMenu = new ContextMenu([],options);  
                                         },
                                         function(){
                                             //fail
                                         });
                                 }
-                                
-                            } catch (error) {
+                            }
+                            catch (error) {
                                 console.error(error)
                             }
-                        } 
-
-                        $scope.flag = true;
-
-                        $scope.init = function (config) {
-                            console.log("ui_context_menu: ui_contextmenu.initController > $scope.init()")
-                            $scope.config   = config;
-                            $scope.config.contextmenuItems = null;
                         }
 
                         $scope.$watch('msg', function(msg) {
-                            console.log("ui_context_menu: ui_contextmenu.initController > $scope.$watch('msg'...)")
-                            var scope = $scope;
-
                             // Ignore undefined messages.
                             if (!msg) {
                                 return;
                             }
-                            if (!scope.config) {
+                            if (!$scope.config) {
                                 console.log("ui_context_menu: $scope.config is empty :(")
                                 return;
                             }
@@ -255,20 +228,19 @@ module.exports = function(RED) {
                             var showOptions = getPosition($scope, msg);//determine postion top/left
                             showOptions.target = document;
                             
-
-                            if(scope.config.menu === "msg"){
-                                //As msg.menu is source - just assign it to scope.config.contextmenuItems
-                                scope.config.contextmenuItems = msg.menu;
-                            } else if (scope.config.menuItems && scope.config.menu === "fixed" && !scope.config.contextmenuItems){
-                                //As the menu is fixed items, generate a compatable contextmenuItems object from scope.config.menuItems
-                                scope.config.contextmenuItems = [];
+                            if($scope.config.menu === "msg"){
+                                //As msg.menu is source - just assign it to $scope.contextmenuItems
+                                $scope.contextmenuItems = msg.menu;
+                            } else if ($scope.config.menuItems && $scope.config.menu === "fixed" && !$scope.contextmenuItems){
+                                //As the menu is fixed items, generate a compatable contextmenuItems object from $scope.config.menuItems
+                                $scope.contextmenuItems = [];
                                 var index = 0;
-                                scope.config.menuItems.forEach(function(menuItem) {
+                                $scope.config.menuItems.forEach(function(menuItem) {
                                     var id=menuItem.id || index;
                                     if(menuItem.label.startsWith("--")){
-                                        scope.config.contextmenuItems.push({text: "---"});
+                                        $scope.contextmenuItems.push({text: "---"});
                                     } else {
-                                        scope.config.contextmenuItems.push({
+                                        $scope.contextmenuItems.push({
                                             index: index,
                                             id: menuItem.id,
                                             icon: menuItem.icon,
@@ -285,16 +257,11 @@ module.exports = function(RED) {
                                 });
                             } 
 
-                            if(scope.config.builtMenu){
-                                scope.config.builtMenu.reload();
-                                scope.config.builtMenu.display(showOptions);
-                            } else {
-                                createMenu(scope, scope.config.contextmenuItems, function (theMenu) {
-                                    scope.config.builtMenu = theMenu;
-                                    scope.config.builtMenu.display(showOptions);
-                                });
+                            if($scope.contextMenu) {
+                                $scope.contextMenu.menu = $scope.contextmenuItems;
+                                $scope.contextMenu.reload();
+                                $scope.contextMenu.display(showOptions);
                             }
-
                         });                        
                     }
                 });
