@@ -183,7 +183,7 @@ module.exports = function(RED) {
                                         payloadType: item.payload || "str",
                                         topic:  item.topic || item.path
                                     }
-                                    scope.send({menuItem: menuItem});                                    
+                                    $scope.send({menuItem: menuItem});                                    
                                 }
                             }
                             
