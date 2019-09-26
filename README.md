@@ -18,8 +18,21 @@ npm install bartbutenaers/node-red-contrib-ui-contextmenu
 ***!!!!! HAVE A LOOK AT THE ISSUES LIST (ABOVE), BEFORE REGISTERING A NEW ISSUE !!!!***
 
 ## Node usage
+Although this node can display a context menu on top of any other dashboard widget, in fact we implemented this node to be used in combination with our [node-red-contrib-ui-svg](https://github.com/bartbutenaers/node-red-contrib-ui-svg) node.
 
-2.16.3
+Therefore the demo will explain how both nodes can be combined to show a context menu on top of a vector graphics drawing in the Node-RED dashboard:
+
+![svg flow](https://user-images.githubusercontent.com/14224149/65722072-c45d7780-e0ab-11e9-99fd-1c0068566d53.png)
+
+1. The SVG node display a vector graphics drawing in the Node-RED dashboard, including a clickable light-bulb icon.
+1. As soon as the user clicks the light-bulb icon, the SVG node will send an output message (incl. ```msg.position``` which contains the X/Y position of the mouse click)!
+1. The message enters the contextmenu-node and will trigger a contextmenu popup displayed at the location specified in ```msg.position```.  Remark: it would make more sense to determine the list of context menu items, based on the ```msg.topic``` which contains the information about which SVG element has been clicked).
+1. As soon as the user clicks on one of the menu items, the contextmenu-node will send an output message (containing information about the clicked menu item).
+1. The next nodes in the flow can handle the clicked menu item ...
+
+A short demo to demonstrate the result:
+
+![contextmenu_demo](https://user-images.githubusercontent.com/14224149/65722808-587c0e80-e0ad-11e9-91cb-8ad14510f03f.gif)
 
 ## Node properties
 
