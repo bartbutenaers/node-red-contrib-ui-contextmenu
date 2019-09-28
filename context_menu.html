@@ -51,6 +51,7 @@
             height: {value: -1},
             fontSize: {value: 16},
             position: {value: "fixed"},
+            outputField: {value: "payload"},
             //unit: {value: "perc"},
             xCoordinate: {value: 50},
             yCoordinate: {value: 50},
@@ -965,6 +966,7 @@
         <input id="node-input-yCoordinate" type="number" style="width: 60px">
         <span id="node-input-yCoordinate-unit">px</span>
     </div> -->
+
     <div class="form-row contextmenu-position-row" style="display: block;">
         <label for="node-input-xCoordinate"><i class="fa fa-arrows-h"></i> X coordinate</label>
         <input id="node-input-xCoordinate" type="number" style="width: 60px" dir="">
@@ -973,6 +975,18 @@
         <label for="node-input-yCoordinate" style="padding-left:20px"><i class="fa fa-arrows-v"></i> Y coordinate</label>
         <input id="node-input-yCoordinate" type="number" style="width: 60px" dir="">
         <span id="node-input-yCoordinate-unit">px</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-outputField"><i class="fa fa-envelope"></i> Output to</label>
+        <div class="red-ui-typedInput-container" style="width: 70%; margin-right: 5px; margin-left: 3px;">    
+            <button class="red-ui-typedInput-type-select"> 
+                <span class="red-ui-typedInput-type-label">msg.</span>
+            </button>
+            <div class="red-ui-typedInput-input-wrap" style="left: 46px; right: 2px;">
+                <input type="text" id="node-input-outputField" placeholder="payload" style="width: 100%; margin-right: 0px; margin-left: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;" autocomplete="disable" dir="" class="red-ui-typedInput-input">
+            </div>
+        </div>
     </div>
 
     <div class="form-row">
@@ -1003,12 +1017,10 @@
         <div style="padding-left: 15px">
             The name of this node 
         </div>
-        
         <h4>Font size</h4>
         <div style="padding-left: 15px">
             The font size of the menu items 
-        </div>
-        
+        </div>        
         <h4>Position and Units</h4>
         <div style="padding-left: 15px">
             This determines how the menu will be positioned.
@@ -1023,7 +1035,10 @@
                 <li>Pixels - when selected, X and Y coordinates are pixel based positioning</li>
             </ul>
         </div>
-        
+        <h4>Output To</h4>
+        <div style="padding-left: 15px">
+            <code>Output to</code> permits you to specify what part of the <code>msg</code> to send the payload to. The default is <code>payload</code> This setting can be overridden on each menu item as required. See the example in "Message Based menu details" below.  
+        </div>                
         <h4>Menu</h4>
         <div style="padding-left: 15px">
             The menu contents.
@@ -1036,43 +1051,56 @@
                 <ul>
                     <li>ID - the id of the menu item</li>
                     <li>Label - what is displayed in the menu</li>
-                    <li>Icon - the font-awsome icon to display</li>
+                    <li>Icon - the font-awesome icon to display</li>
                     <li>Topic - the <code>topic</code> to send in the output <code>msg</code></li>
                     <li>Payload - the <code>payload</code> to send in the output <code>msg</code></li>
                 </ul>
             </p>
             <p><b>Message Based menu details...</b></p>
-            <p> <code>msg.menu</code> should contain an object with items for the menu structure (<a href="https://swisnl.github.io/jQuery-contextMenu/docs/items.html" target="_blank" rel="noopener noreferrer">reference</a>)  e.g.<br>
+            <p> <code>msg.menu</code> should contain an object with items for the menu structure (<a href="https://github.com/dsaul/contextmenujs/blob/master/README.md" target="_blank" rel="noopener noreferrer">reference</a>)  e.g.<br>
 <pre style="white-space: pre">
+[
     {
-        "edit": {
-            "name": "Edit",
-            "icon": "fa-edit",
-            "topic": "edit",
-            "payload": [1,2,3,4,5],
-            "payloadType": "JSON"
-        },
-        "cut": {
-            "name": "Cut",
-            "icon": "fa-cut",
-            "topic": "cut",
-            "payload": "cut",
-            "payloadType": "str"
-        },
-        "sep1": "---------",
-        "quit": {
-            "name": "Quit",
-            "icon": "fa-quit"
-        },
-        "sep2": "---------",
-        "fold1": {
-            "name": "Sub group",
-            "items": {
-                "fold1-key1": { "name": "fred" },
-                "fold1-key2": { "name": "george" }
+        "text": "Options",
+        "icon": "fa-list",
+        "sub": [
+            {
+                "text": "Edit",
+                "icon": "fa-edit",
+                "topic": "edit",
+                "payload": [ 1, 2, 3, 4, 5 ],
+                "payloadType": "JSON",
+                "outputField" : "editArray"
+            },
+            {
+                "text": "Cut",
+                "icon": "fa-cut",
+                "enabled": true,
+                "topic": "cut",
+                "payload": "true",
+                "payloadType": "bool"
             }
-        }
-    }    
+        ]
+    },
+    {
+        "text": "---"
+    },
+    {
+        "text": "Delete",
+        "icon": "fa-trash",
+        "enabled": true,
+        "payload": "12",
+        "payloadType": "num"
+    },
+    {
+        "text": "---"
+    },
+    {
+        "text": "Quit",
+        "icon": "fa-times",
+        "enabled": false
+    }
+] 
 </pre>
                     
 
@@ -1099,9 +1127,9 @@
     <dl class="message-properties">
         <dt><i>payload</i> <span class="property-type">number|string|boolean|object|buffer</span></dt>
         <dd><code>msg.topic</code> will contain whatever is configured in 'topic'</dd>
-        <dd><code>msg.payload</code> will contain whatever is configured in 'payload'</dd>
+        <dd><code>msg.payload*</code> will contain whatever is configured in 'payload'. payload may be changed by setting "Output To" </dd>
         <dd>if <code>topic</code> is not configured for the menu item, it will default to a string containing the key of clicked item</dd>
-        <dd>if <code>payload</code> is not configured for the menu item, it will default a string containing the key of clicked item</dd>
+        <dd>if <code>payload</code> is not configured for the menu item, it will default to a string containing the label of clicked item</dd>
     </dl>
 
 </script>

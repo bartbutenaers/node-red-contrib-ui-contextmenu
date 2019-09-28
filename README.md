@@ -46,52 +46,78 @@ Specify how the position of the context menu on the screen will be specified:
 
 + *Fixed*: Two input fields will be displayed (X Coordinate and Y Coordinate), to enter the fixed coordinates.
 
+### Output To
+Specify where the payload output from clicking a menu item should appear in the `msg`. 
+NOTE: for a *msg based menu*, this can be set per menu item via the property `outputField` (see Message Based example below)
+
 ### Menu
 Specify how the menu items of the context menu will be specified:
 
-+ *Message Based*: when selected, the input message must contain a ```msg.menu``` field which holds the menu items.
++ *Message Based*: when selected, the input message must contain a ```msg.menu``` field which holds the array of menu items.
 
    An example input message:
    ```
-   "menu": {
-        "edit": {
-            "name": "Edit",
-            "icon": "fa-edit",
-            "topic": "edit",
-            "payload": [1,2,3,4,5],
-            "payloadType": "JSON"
-        },
-        "cut": {
-            "name": "Cut",
-            "icon": "fa-cut",
-            "topic": "cut",
-            "payload": "cut",
-            "payloadType": "str"
-        },
-        "sep1": "---------",
-        "quit": {
-            "name": "Quit",
-            "icon": "fa-quit"
-        },
-        "sep2": "---------",
-        "fold1": {
-            "name": "Sub group",
-            "items": {
-                "fold1-key1": { "name": "fred"  },
-                "fold1-key2": { "name": "george"}
-            }
-        }
-   }
+   "menu": [
+                {
+                    "text": "Options",
+                    "icon": "fa-list",
+                    "sub": [
+                        {
+                            "text": "Edit",
+                            "icon": "fa-edit",
+                            "topic": "edit",
+                            "payload": [ 1, 2, 3, 4, 5 ],
+                            "payloadType": "JSON",
+                            "outputField" : "editArray"
+                        },
+                        {
+                            "text": "Cut",
+                            "icon": "fa-cut",
+                            "enabled": true,
+                            "topic": "cut",
+                            "payload": "true",
+                            "payloadType": "bool"
+                        }
+                    ]
+                },
+                {
+                    "text": "---"
+                },
+                {
+                    "text": "Delete",
+                    "icon": "fa-trash",
+                    "enabled": true,
+                    "payload": "12",
+                    "payloadType": "num"
+                },
+                {
+                    "text": "---"
+                },
+                {
+                    "text": "Quit",
+                    "icon": "fa-times",
+                    "enabled": false
+                }
+            ]
    ```
+   + Nested menus are possible when the menu is supplied by `msg.menu`
+   + *text*: The label that will be displayed in the context menu. NOTE: To create a separator, use "---" as the text value (all other fields can be left blank).
+   + *icon*: (optional) The FontAwesome icon that will be displayed in the context menu.
+   + *sub*: (optional) An array of sub menu items
+   + *topic*: (optional) The `msg.topic` that will be send in the output message. If left empty, `topic` will default the the `path` of this menu item.
+   + *payload*: The `msg.payload` that will be send in the output message. If left empty, `message` will default the the `text` of this menu item.
+   + *payloadType*: The type of `msg.payload`. Allowable types are 'JOSN', 'str', 'bool', 'num'. `payload` will be converted to this type.
+   + *outputField*: (optional) It is possible to override the "Output to" field. This property will permit the `payload` to be send to an alternative property of `msg` 
+   + ** *text* is the only** mandatory field.  
 
 + *Fixed*: A table will be displayed, to enter the menu items.  The following properties can be set for every menu item:
    + *ID*: The id of the menu item (which won't be displayed).
-   + *Label*: The label that will be displayed in the context menu.
+   + *Label*: The label that will be displayed in the context menu. Set the Label to "---" to create a seperator (all other fields can be left blank). 
    + *Icon*: The FontAwesome icon that will be displayed in the context menu.
-   + *Topic*: The ```msg.topic``` that will be send in the output message.
-   + *Payload*: The ```msg.payload``` that will be send in the output message.
+   + *Topic*: The `msg.topic` that will be send in the output message.
+   + *Payload*: The `msg.payload` that will be send in the output message.  NOTE: if the "Output to" field is set to something other than "payload", then the output will appear in that property of `msg` 
    
-The message-based approach has the advantage that it offers both ***separators*** and ***nested menu items***, which is currently not available in the config screen!
+The message-based approach has the advantage that it offers ***nested menu items***, which is currently not available in the config screen!
 
 The label an icon are both optional.  This means you can use both or only one of them, to achieve various effects.
 
@@ -99,5 +125,5 @@ The label an icon are both optional.  This means you can use both or only one of
 As soon as a menu item has been clicked, an output message will be send.  It is up to the next nodes in the flow, to determine how the menu item should be handled.  
 
 The output message will contain following fields:
-+ *payload*: This will contain the payload value that has been specified in the menu item, or by default a string containing the key of clicked item.
-+ *topic*: This will contain the topic value that has been specified in the menu item, or by default a string containing the key of clicked item.
++ *payload*: This will contain the payload value that has been specified in the menu item, or by default a string containing the key of clicked item. NOTE: if the "Output to" field is set to something other than "payload", then the output will appear in that property of `msg`. This can also be overriden per menu item by setting `outputField` in the menu item
++ *topic*: This will contain the topic value that has been specified in the menu item, or by default a string containing the path of menu clicked item.

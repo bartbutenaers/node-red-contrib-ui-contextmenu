@@ -17,6 +17,14 @@
 module.exports = function(RED) {
     var settings = RED.settings;
 
+    function setResult(msg, field, value) {
+        field = field ? field : "payload";
+        const keys = field.split('.');
+        const lastKey = keys.pop();
+        const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, msg); 
+        lastObj[lastKey] = value;
+    };
+
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);  
@@ -38,7 +46,7 @@ module.exports = function(RED) {
     
     function ContextMenuNode(config) {
         var node = this;
-            
+        node.outputField = config.outputField;
         try {
             if(ui === undefined) {
                 ui = RED.require("node-red-dashboard")(RED);
@@ -96,10 +104,9 @@ module.exports = function(RED) {
                             };
                             RED.util.evaluateNodeProperty(orig.msg.menuItem.payload,orig.msg.menuItem.payloadType,node,orig.msg,(err,value) => {
                                 if (err) {
-                                    throw err;//is this an erro object? or should I create new Error(err)?
+                                    throw err;//TODO: is this an error object? or should I create new Error(err)?
                                 } else {
-                                    //setResult(newMsg, node.outputField, value); 
-                                    newMsg.payload = value;
+                                    setResult(newMsg, node.outputField || orig.msg.menuItem.outputField, value); 
                                 }
                             }); 
                             return newMsg;
@@ -180,8 +187,9 @@ module.exports = function(RED) {
                                         label: item.label || item.text,
                                         text: item.label || item.text,
                                         payload: item.payload || item.text,
-                                        payloadType: item.payload || "str",
-                                        topic:  item.topic || item.path
+                                        payloadType: item.payloadType || "str",
+                                        topic:  item.topic || item.path,
+                                        outputField: item.outputField
                                     }
                                     $scope.send({menuItem: menuItem});                                    
                                 }
@@ -227,6 +235,8 @@ module.exports = function(RED) {
                                         
                             var showOptions = getPosition($scope, msg);//determine postion top/left
                             showOptions.target = document;
+
+                            console.log("ui_context_menu: msg received")
                             
                             if($scope.config.menu === "msg"){
                                 //As msg.menu is source - just assign it to $scope.contextmenuItems
@@ -250,7 +260,8 @@ module.exports = function(RED) {
                                             text: menuItem.label,
                                             payload: menuItem.payload,
                                             payloadType: menuItem.payload,
-                                            topic:  menuItem.topic
+                                            topic:  menuItem.topic,
+                                            outputField: menuItem.outputField
                                         })
                                     }
                                     index++;
