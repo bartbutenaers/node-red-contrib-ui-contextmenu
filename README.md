@@ -106,7 +106,7 @@ Specify how the menu items of the context menu will be specified:
    + *sub*: (optional) An array of sub menu items
    + *topic*: (optional) The `msg.topic` that will be send in the output message. If left empty, `topic` will default the the `path` of this menu item.
    + *payload*: The `msg.payload` that will be send in the output message. If left empty, `message` will default the the `text` of this menu item.
-   + *payloadType*: The type of `msg.payload`. Allowable types are 'JOSN', 'str', 'bool', 'num'. `payload` will be converted to this type.
+   + *payloadType*: The type of `msg.payload`. Allowable types are 'JSON', 'str', 'bool', 'num'. `payload` will be converted to this type.
    + *outputField*: (optional) It is possible to override the "Output to" field. This property will permit the `payload` to be send to an alternative property of `msg` 
    + ** *text* is the only** mandatory field.  
 
@@ -127,3 +127,7 @@ As soon as a menu item has been clicked, an output message will be send.  It is 
 The output message will contain following fields:
 + *payload*: This will contain the payload value that has been specified in the menu item, or by default a string containing the key of clicked item. NOTE: if the "Output to" field is set to something other than "payload", then the output will appear in that property of `msg`. This can also be overriden per menu item by setting `outputField` in the menu item
 + *topic*: This will contain the topic value that has been specified in the menu item, or by default a string containing the path of menu clicked item.
+
+
+### Thanks to
+dsaul whose menu this node is based on https://github.com/dsaul/contextmenujs/
