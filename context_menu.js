@@ -189,28 +189,41 @@ module.exports = function(RED) {
                     if($scope.config.fontSize) {
                         options.fontSize = $scope.config.fontSize + "px";
                     }
-                    
-                    try {
-                        if(window.ContextMenu){
-                            $scope.contextMenu = new ContextMenu([],options); 
+                   
+                    if (!$scope.contextMenu) {
+                        // The ContextMenu instance creates a container, which is a DIV element that contains an UL list (of menu items).
+                        // Since there is no ContextMenu instance (anymore), all old containers should be removed from the DOM.
+                        // These containers are added directly under the 'body', so we have to make sure we don't delete similar other nodes.
+                        // Therefore we delete DIV elements with id starting with 'cm_' and class 'cm_container'.
+                        var contextMenuContainers = document.querySelectorAll("div[id^='cm_'].cm_container");
+                        Array.prototype.forEach.call( contextMenuContainers, function( node ) {
+                            debugger;
+                            node.parentNode.removeChild( node );
+                        });
+                        
+                        try {
+                            // Only load the context menu libraries from the server, when not loaded yet
+                            if(window.ContextMenu){
+                                $scope.contextMenu = new ContextMenu([],options); 
+                            }
+                            else {
+                                var urls = [
+                                    '/ui_context_menu/lib/contextmenu.js',
+                                    '/ui_context_menu/lib/contextmenu.css'
+                                ];
+                                loadJavascriptAndCssFiles(urls, 
+                                    function(){
+                                        //success
+                                        $scope.contextMenu = new ContextMenu([],options);  
+                                    },
+                                    function(){
+                                        //fail
+                                    });
+                            }
                         }
-                        else {
-                            var urls = [
-                                '/ui_context_menu/lib/contextmenu.js',
-                                '/ui_context_menu/lib/contextmenu.css'
-                            ];
-                            loadJavascriptAndCssFiles(urls, 
-                                function(){
-                                    //success
-                                    $scope.contextMenu = new ContextMenu([],options);  
-                                },
-                                function(){
-                                    //fail
-                                });
+                        catch (error) {
+                            console.error(error)
                         }
-                    }
-                    catch (error) {
-                        console.error(error)
                     }
                 }
 
@@ -219,6 +232,7 @@ module.exports = function(RED) {
                     if (!msg) {
                         return;
                     }
+
                     if (!$scope.config) {
                         console.log("ui_context_menu: $scope.config is empty :(")
                         return;
