@@ -261,6 +261,11 @@ module.exports = function(RED) {
 
                     if($scope.contextMenu) {
                         $scope.contextMenu.menu = $scope.contextmenuItems;
+                        $scope.contextMenu.setOptions({
+                            default_text: "",
+                            allow_blank_item: true,
+                            //default_icon: "fa-circle-o"
+                        });
                         $scope.contextMenu.reload();
                         $scope.contextMenu.display(showOptions);
                     }
