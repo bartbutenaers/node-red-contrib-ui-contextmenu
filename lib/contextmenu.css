@@ -44,12 +44,11 @@
   .cm_container li .cm_icon_span{
     width: 1.5em;
     height: 1.2em;
-    vertical-align: bottom;
+    /* vertical-align: bottom; */
     display: inline-block;
     margin-right: 5px;
     padding-right: 5px;
     text-align: center;
-    vertical-align
   }
   
   .cm_container li .cm_sub_span{
