@@ -125,6 +125,13 @@ The message-based approach has the advantage that it offers ***nested menu items
 
 The label an icon are both optional.  This means you can use both or only one of them, to achieve various effects.
 
+### Menu
+Specify how the colors of the context menu should look like:
+
++ *Native*: The default CSS colors of this node will be used.
++ *Custom*: Three color pickers will be displayed, which allow you to specify your custom colors.
++ *Match dashboard theme*: The colors of the currently selected dashboard theme will be used.
+
 ### Output message
 As soon as a menu item has been clicked, an output message will be send.  It is up to the next nodes in the flow, to determine how the menu item should be handled.  
 
