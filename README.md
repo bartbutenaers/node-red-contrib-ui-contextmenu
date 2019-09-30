@@ -30,6 +30,10 @@ Therefore the demo will explain how both nodes can be combined to show a context
 1. As soon as the user clicks on one of the menu items, the contextmenu-node will send an output message (containing information about the clicked menu item).
 1. The next nodes in the flow can handle the clicked menu item ...
 
+```diff
+! CAUTION: both nodes need to be on the same dashboard group, otherwise no contextmenu will appear!!!
+```
+
 A short demo to demonstrate the result:
 
 ![contextmenu_demo](https://user-images.githubusercontent.com/14224149/65722808-587c0e80-e0ad-11e9-91cb-8ad14510f03f.gif)
