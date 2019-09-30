@@ -40,11 +40,23 @@ module.exports = function(RED) {
     function ContextMenuNode(config) {
         var node = this;
         node.outputField = config.outputField;
+        
         if(ui === undefined) {
             ui = RED.require("node-red-dashboard")(RED);
         }
+        
+        // When the user has selected to use theme colors, then just that ...
+        if (config.colors === "theme") {
+            var theme = ui.getTheme();
+            config.textColor = theme["widget-textColor"].value || config.textColor;
+            config.backgroundColor = theme["widget-backgroundColor"].value || config.backgroundColor;
+            config.borderColor = theme["widget-borderColor"].value || config.borderColor;
+        }
+        
         RED.nodes.createNode(this, config);
+        
         var html = HTML(config);
+        
         var done = ui.addWidget({
             node: node,
             group: config.group,
@@ -197,7 +209,6 @@ module.exports = function(RED) {
                         // Therefore we delete DIV elements with id starting with 'cm_' and class 'cm_container'.
                         var contextMenuContainers = document.querySelectorAll("div[id^='cm_'].cm_container");
                         Array.prototype.forEach.call( contextMenuContainers, function( node ) {
-                            debugger;
                             node.parentNode.removeChild( node );
                         });
                         
@@ -282,6 +293,25 @@ module.exports = function(RED) {
                         });
                         $scope.contextMenu.reload();
                         $scope.contextMenu.display(showOptions);
+                        
+                        // Only override the CSS colors when no 'native' colors selected
+                        if ($scope.config.colors !== "native") {
+                            var contextMenuNum = $scope.contextMenu.num;
+                            var contextMenuDiv = document.getElementById('cm_' + contextMenuNum);
+                            
+                            if (contextMenuDiv) {
+                                var elements = contextMenuDiv.querySelectorAll('ul');
+                                for (var i = 0; i < elements.length; i++) {
+                                    elements[i].style.boxShadow = "0 0 5px " + $scope.config.borderColor;
+                                }
+                                
+                                elements = contextMenuDiv.querySelectorAll('li');
+                                for (var i = 0; i < elements.length; i++) {
+                                    elements[i].style.color = $scope.config.textColor;
+                                    elements[i].style.background = $scope.config.backgroundColor;
+                                }
+                            }
+                        }
                     }
                 });                        
             }
