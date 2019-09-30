@@ -57,6 +57,11 @@
             yCoordinate: {value: 50},
             menu: {value: "fixed"},
             menuItems: {value: []},
+            colors: {value: 'custom'},
+            // By default we set the same colors as in the ContextMenu library CSS file
+            textColor: {value: '#000000'},
+            backgroundColor: {value: '#ffffff'},
+            borderColor: {value: '#626262'},
             name: {value: ''}
         },
         inputs:1,
@@ -748,10 +753,8 @@
               "fa-wpexplorer",
               "fa-meetup"
             ]
-
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
-
             // Create a table of menu items
             var menuItemList = $("#node-input-menuItems-container").css('min-height','150px').css('min-width','500px').editableList({
                 header: $("<div>").css({padding:"6px"}).append($.parseHTML(`
@@ -778,13 +781,10 @@
                         
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
-
                     $('<i style="color:#eee; cursor:move; margin-left:3px;" class="red-ui-editableList-item-handle fa fa-bars node-input-menuItem-handle"></i>').appendTo(row);
-
                      //Column 1 : Add an input field (type string) to the new row, that represents the command 
                      var idField = $('<input/>',{class:"node-input-menuItem-id",type:"text",placeholder:"id"}).css({"width":"15%","margin-left":"25px","margin-right":"5px"}).appendTo(row);
                      idField.val(menuItem.id);
-
                     // Column 2 : Add an input field (type string) to the new row, that represents the label 
                     var labelField = $('<input/>',{class:"node-input-menuItem-label",type:"text",placeholder:"label"}).css({"width":"15%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     labelField.val(menuItem.label);
@@ -796,11 +796,9 @@
                         source: iconCssClassNames
                     });
                     iconField.val(menuItem.icon);
-
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
                     var topicField = $('<input/>',{class:"node-input-menuItem-topic",type:"text",placeholder:"Topic"}).css({"width":"15%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(menuItem.topic);
-
                     // Column 5 : Add a input field (type string) to the new row, that represents the msg.payload content 
                     var payloadField = $('<input/>',{class:"node-input-menuItem-payload",type:"text",placeholder:"Payload"}).css({"width":"25%","margin-left":"5px"}).appendTo(row);
                                         
@@ -814,16 +812,13 @@
                     });
                     payloadField.typedInput("type", payloadType);              
                     payloadField.typedInput("value", menuItem.payload);   
-
                     //new line
                     var line2 = $('<div/>').css({"padding": "6px"}).appendTo(row);
-
                     // Line 2, Column 1
                     var visibleFieldId = "menuItemVisible" + i;
                     var visibleField = $('<input/>',{id: visibleFieldId, class:"node-input-menuItem-visible",type:"checkbox"}).css({"margin-left": "20px","margin-right": "5px", "vertical-align": "top", "width": "auto"}).appendTo(line2);
                     var visibleLabelField = $('<label/>',{for: visibleFieldId }).css({"margin-left": "0px", "vertical-align": "top"}).text("Visible").appendTo(line2);
                     visibleField.prop('checked', menuItem.visible);
-
                     // Line 2, Column 7  
                     var enabledFieldId = "menuItemEnabled" + i;
                     var enabledField = $('<input/>',{id: enabledFieldId, class:"node-input-menuItem-enabled",type:"checkbox"}).css({"margin-left": "0px","margin-right": "5px", "vertical-align": "top", "width": "auto"}).appendTo(line2);
@@ -832,7 +827,6 @@
                 },
                 removable: true
             });
-
             // Show all the menu items (stored in this node) into the editableList
             if (this.menuItems) {
                 this.menuItems.forEach(function (menuItem, index) {
@@ -876,18 +870,25 @@
                 }
             });
             $("#node-input-menu").change();
-
-
             $( "#node-input-menuItems-container" ).sortable({
                 axis: "y",
                 handle:".node-input-menuItem-handle",
                 cursor: "move"
             });
-
+            
+            // Only show the colour fields, when the position is "fixed"
+            $("#node-input-colors").change(function() {
+                if ($("#node-input-colors").val() === "custom") {
+                    $(".contextmenu-customColours").show();
+                }
+                else {
+                    $(".contextmenu-customColours").hide();
+                }
+            });
+            $("#node-input-colors").change();
         },
         oneditsave: function() {
             var node = this;
-
             // Copy all the menu items from the editableList to this node
             node.menuItems = [];
             var menuItemsList = $("#node-input-menuItems-container").editableList('items');
@@ -995,13 +996,39 @@
             <option value="msg">Message based</option>
         </select>
     </div>
+    
     <div class="form-row form-row-auto-height contextmenu-menuitems-row">
         <!-- Table with menu items -->
         <ol id="node-input-menuItems-container"></ol>
     </div>
+    
+    <div class="form-row">
+        <label for="node-input-colors"><i class="fa fa-cog"></i> Colours</label>
+        <select id="node-input-colors">
+            <option value="native">Native</option>
+            <option value="custom">Custom</option> 
+            <option value="theme">Match dashboard theme</option>
+        </select>
+    </div>
+    
+    <div class="form-row contextmenu-customColours">
+        <label for="node-input-textColor"><i class="fa fa-paint-brush"></i> Text</span></label>
+        <input type="color" id="node-input-textColor"/>
+    </div>
+    
+    <div class="form-row contextmenu-customColours">
+        <label for="node-input-backgroundColor"><i class="fa fa-paint-brush"></i> Background</span></label>
+        <input type="color" id="node-input-backgroundColor"/>
+    </div>    
+    
+    <div class="form-row contextmenu-customColours">
+        <label for="node-input-borderColor"><i class="fa fa-paint-brush"></i> Border</span></label>
+        <input type="color" id="node-input-borderColor"/>
+    </div>
 </script>
 <script type="text/html" data-help-name="ui_context_menu">
     <p>A Node Red node to show a popup context menu inside the dashboard.</p>
+    <p><strong>CAUTION: The context menu will only appear when the group (see config screen) is currently visible!</strong></p>
     <h3>General Properties...</h3>
     <dl class="message-properties">
         <h4>Group</h4>
@@ -1101,10 +1128,17 @@
     }
 ] 
 </pre>
-                    
-
             </p>
         </div>
+        <h4>Colors</h4>
+        <div style="padding-left: 15px">
+            This determines which colors will be used for the menu.
+            <ul>
+                <li>Native - The default CSS colors of this node will be used.</li>
+                <li>Custom - Three color pickers will be displayed to specify custom colors.</li>
+                <li>Match dashboard theme - The colors of the currently selected dashboard theme will be used.</li>
+            </ul>
+        </div>        
     </dl>
 
     <h3>Inputs</h3>
