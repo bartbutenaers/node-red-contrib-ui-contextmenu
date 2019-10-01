@@ -31,7 +31,7 @@ Therefore the demo will explain how both nodes can be combined to show a context
 1. The next nodes in the flow can handle the clicked menu item ...
 
 ```diff
-! CAUTION: The context menu will only appear when the group (see config screen) is currently visible !
+! CAUTION: The context menu will only appear when the dashboard group (see config screen) is currently visible !
 ```
 
 A short demo to demonstrate the result:
