@@ -170,6 +170,12 @@ module.exports = function(RED) {
                         if (typeof failureCallback === 'function') failureCallback();
                     });
                 }
+                
+                // Adjust a colour with a specified amount
+                // See https://stackoverflow.com/a/57401891
+                function adjust(color, amount) {
+                    return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
+                }
 
                 $scope.flag = true;
 
@@ -307,7 +313,13 @@ module.exports = function(RED) {
                                 
                                 elements = contextMenuDiv.querySelectorAll('li');
                                 for (var i = 0; i < elements.length; i++) {
-                                    elements[i].style.color = $scope.config.textColor;
+                                    if (elements[i].attributes["disabled"]) {
+                                        // Apply an opacty 0.5 for disabled menu items
+                                        elements[i].style.color = adjust($scope.config.textColor, 100);
+                                    }
+                                    else {
+                                        elements[i].style.color = $scope.config.textColor;
+                                    }
                                     elements[i].style.background = $scope.config.backgroundColor;
                                 }
                             }
