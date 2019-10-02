@@ -185,6 +185,8 @@ module.exports = function(RED) {
                     $scope.contextmenuItems = null;
                     
                     var options = {
+                        default_text: "",
+                        allow_blank_item: true,
                         callback: function(evt, item) {
 
                             let menuItem = {
@@ -249,7 +251,7 @@ module.exports = function(RED) {
                     if (!msg) {
                         return;
                     }
-
+                    
                     if (!$scope.config) {
                         console.log("ui_context_menu: $scope.config is empty :(")
                         return;
@@ -292,11 +294,6 @@ module.exports = function(RED) {
 
                     if($scope.contextMenu) {
                         $scope.contextMenu.menu = $scope.contextmenuItems;
-                        $scope.contextMenu.setOptions({
-                            default_text: "",
-                            allow_blank_item: true,
-                            //default_icon: "fa-circle-o"
-                        });
                         $scope.contextMenu.reload();
                         $scope.contextMenu.display(showOptions);
                         
