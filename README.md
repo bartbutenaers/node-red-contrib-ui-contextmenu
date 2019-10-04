@@ -13,7 +13,7 @@ npm install bartbutenaers/node-red-contrib-ui-contextmenu
 
 ***!!!!! ONLY USE IT FOR TESTING PURPOSES !!!!***
 
-***!!!!! PROBABLY THE API WILL BE CHANGED SOON, WHICH MEANS SVG DATA WILL BE LOST !!!!***
+***!!!!! FOLLOW OUR [DISCUSSION](https://discourse.nodered.org/t/announce-node-red-contrib-ui-contextmenu-first-beta/16211) ON THE NODE-RED FORUM !!!!***
 
 ***!!!!! HAVE A LOOK AT THE ISSUES LIST (ABOVE), BEFORE REGISTERING A NEW ISSUE !!!!***
 
@@ -134,12 +134,27 @@ The message-based approach has the advantage that it offers ***nested menu items
 
 The label an icon are both optional.  This means you can use both or only one of them, to achieve various effects.
 
-### Menu
+### Auto hide
++ When this value is ```0``` the context menu will stay visible, until a menu item is selected or outside the menu is being clicked.  
++ When this value is e.g. <code>3 seconds</code> this means that the context menu will automatically disappear when the context menu is out of focus during at least 3 seconds.  
+   + So as long as the mouse cursors is on top of the menu, the user has time to think about which action he wants to perform.  
+   + As soon as the mouse cursor leaves the context menu, the timer will start counting.
+   + But when the mouse cursor enters the context menu again, the timer will be reset.  This way the users has again extra time to think about the action he wants to perform.
+   + When the mouse cursor is away from the context menu for the specified time interval, the context menu will automatically be hidden.
+   
+Demo of auto hide in 3 seconds (notice the timer status in the console):
+
+![contextmenu_timer](https://user-images.githubusercontent.com/14224149/66244476-e50b7a00-e708-11e9-870c-36bde4e9a888.gif)
+
+
+### Colors
 Specify how the colors of the context menu should look like:
 
 + *Native*: The default CSS colors of this node will be used.
-+ *Custom*: Three color pickers will be displayed, which allow you to specify your custom colors.
 + *Match dashboard theme*: The colors of the currently selected dashboard theme will be used.
++ *Custom*: Three color pickers will be displayed, which allow you to specify your custom colors.
+
+   ![Custom colors](https://user-images.githubusercontent.com/14224149/66244438-b8576280-e708-11e9-9931-2399e414ef7c.png)
 
 ### Output message
 As soon as a menu item has been clicked, an output message will be send.  It is up to the next nodes in the flow, to determine how the menu item should be handled.  
