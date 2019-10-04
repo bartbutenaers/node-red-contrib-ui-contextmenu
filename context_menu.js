@@ -60,6 +60,7 @@ module.exports = function(RED) {
         var done = ui.addWidget({
             node: node,
             group: config.group,
+            order: config.order,
             width: config.width,
             height: config.height,
             format: html,
@@ -184,6 +185,23 @@ module.exports = function(RED) {
                     $scope.config = config;
                     $scope.contextmenuItems = null;
                     
+                    // Migrate older nodes, which had no auto hide functionality
+                    $scope.config.intervalLength = $scope.config.intervalLength || 0;
+                    $scope.config.intervalUnit   = $scope.config.intervalUnit || "secs";
+                    
+                    // Convert the 'intervalLength' value to milliseconds (based on the selected time unit)
+                    switch($scope.config.intervalUnit) {
+                        case "msecs":
+                            $scope.intervalLengthMsecs = $scope.config.intervalLength;
+                            break;
+                        case "secs":
+                            $scope.intervalLengthMsecs = $scope.config.intervalLength * 1000;
+                            break;
+                        case "mins":
+                            $scope.intervalLengthMsecs = $scope.config.intervalLength * 1000 * 60;
+                            break;          
+                    }
+                    
                     var options = {
                         default_text: "",
                         allow_blank_item: true,
@@ -251,7 +269,7 @@ module.exports = function(RED) {
                     if (!msg) {
                         return;
                     }
-                    
+
                     if (!$scope.config) {
                         console.log("ui_context_menu: $scope.config is empty :(")
                         return;
@@ -297,27 +315,56 @@ module.exports = function(RED) {
                         $scope.contextMenu.reload();
                         $scope.contextMenu.display(showOptions);
                         
-                        // Only override the CSS colors when no 'native' colors selected
-                        if ($scope.config.colors !== "native") {
-                            var contextMenuNum = $scope.contextMenu.num;
-                            var contextMenuDiv = document.getElementById('cm_' + contextMenuNum);
+                        // If a timer of the previous context menu exist, then remove it to make sure it doesn't hide our new contextmenu
+                        if ($scope.autoHideTimer) {
+                            clearTimeout($scope.autoHideTimer);
+                            $scope.autoHideTimer = null;
+                        }
+                        
+                        var contextMenuNum = $scope.contextMenu.num;
+                        var contextMenuDiv = document.getElementById('cm_' + contextMenuNum);
+                        var ulElements = contextMenuDiv.querySelectorAll('ul');
                             
+                        // When the auto hide interval is 0, then there is no auto hiding.
+                        // Otherwise the context menu should be hidden after the specified interval.
+                        // We will start counting the seconds, from the moment on the context menu has been left ...
+                        if ($scope.intervalLengthMsecs > 0) {
+                            
+                            for (var i = 0; i < ulElements.length; i++) {
+                                ulElements[i].addEventListener('mouseleave', function() {
+                                    console.log("Timer started when leaving the context menu");
+                                    $scope.autoHideTimer = setTimeout(function() { 
+                                        $scope.contextMenu.hide();
+                                        $scope.autoHideTimer = null;
+                                    }, $scope.intervalLengthMsecs);
+                                });
+                                ulElements[i].addEventListener('mouseenter', function() {
+                                    console.log("Timer stopped when entering the context menu");
+                                    if ($scope.autoHideTimer) {
+                                        clearTimeout($scope.autoHideTimer);
+                                        $scope.autoHideTimer = null;
+                                    }
+                                });
+                            }
+                        }
+                        
+                        // Only override the CSS colors when no 'native' colors selected
+                        if ($scope.config.colors !== "native") {                   
                             if (contextMenuDiv) {
-                                var elements = contextMenuDiv.querySelectorAll('ul');
-                                for (var i = 0; i < elements.length; i++) {
-                                    elements[i].style.boxShadow = "0 0 5px " + $scope.config.borderColor;
+                                for (var i = 0; i < ulElements.length; i++) {
+                                    ulElements[i].style.boxShadow = "0 0 5px " + $scope.config.borderColor;
                                 }
                                 
-                                elements = contextMenuDiv.querySelectorAll('li');
-                                for (var i = 0; i < elements.length; i++) {
-                                    if (elements[i].attributes["disabled"]) {
+                                ulElements = contextMenuDiv.querySelectorAll('li');
+                                for (var i = 0; i < ulElements.length; i++) {
+                                    if (ulElements[i].attributes["disabled"]) {
                                         // Apply an opacty 0.5 for disabled menu items
-                                        elements[i].style.color = adjust($scope.config.textColor, 100);
+                                        ulElements[i].style.color = adjust($scope.config.textColor, 100);
                                     }
                                     else {
-                                        elements[i].style.color = $scope.config.textColor;
+                                        ulElements[i].style.color = $scope.config.textColor;
                                     }
-                                    elements[i].style.background = $scope.config.backgroundColor;
+                                    ulElements[i].style.background = $scope.config.backgroundColor;
                                 }
                             }
                         }
