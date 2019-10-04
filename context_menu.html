@@ -62,6 +62,8 @@
             textColor: {value: '#000000'},
             backgroundColor: {value: '#ffffff'},
             borderColor: {value: '#626262'},
+            intervalLength: {value: 0},
+            intervalUnit: {value: "secs"},
             name: {value: ''}
         },
         inputs:1,
@@ -74,6 +76,10 @@
         },
         oneditprepare: function() {
             var node = this;
+            
+            // Migrate older nodes, that didn't have the auto-hide feature yet
+            $('#node-input-intervalLength').val(this.intervalLength || 0);
+            $('#node-input-intervalUnit').val(this.intervalUnit || "secs");
             
             // List of all available FontAwesome icons (version 4.7.0)
             var iconCssClassNames = [
@@ -1003,6 +1009,16 @@
     </div>
     
     <div class="form-row">
+        <label for="node-input-intervalLength"><i class="fa fa-clock-o"></i> Auto hide</label>
+        <input type="number" id="node-input-intervalLength" style="width:180px;">
+        <select id="node-input-intervalUnit" style="width:120px;">
+            <option value="msecs">MilliSeconds</option>
+            <option value="secs">Seconds</option>
+            <option value="mins">Minutes</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
         <label for="node-input-colors"><i class="fa fa-cog"></i> Colours</label>
         <select id="node-input-colors">
             <option value="native">Native</option>
@@ -1130,6 +1146,10 @@
 </pre>
             </p>
         </div>
+        <h4>Auto hide</h4>
+        <div style="padding-left: 15px">
+            When this value is <code>0</code> the context menu will stay visible, until a menu item is selected or outside the menu is being clicked.  When this value is e.g. <code>3 seconds</code> this means that the context menu will automatically disappear when the context menu is out of focus during at least 3 seconds.
+        </div>     
         <h4>Colors</h4>
         <div style="padding-left: 15px">
             This determines which colors will be used for the menu.
