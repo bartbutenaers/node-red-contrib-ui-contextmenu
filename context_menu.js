@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-
 module.exports = function(RED) {
     var settings = RED.settings;
 
@@ -25,42 +24,188 @@ module.exports = function(RED) {
         lastObj[lastKey] = value;
     };
 
-    function HTML(config) {
+    // Version 4.0 : https://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+
+    /**
+     * pSBC = perform Shading, Blending, Conversion.  See examples below..
+     *
+     * @param {Number} p - Percent or adjust -1.0 ~ 1.0
+     * @param {String|Object} c0 - From colour
+     * @param {String|Object|Boolean} c1 - To Color
+     * @param {Boolean} l - Linear / Log blending.  true for Linear Blending, false for log blending
+     * @returns new color string.  This can be either #xxxxxx?? or RBG(x,x,x,?) depending on input
+     * @example 
+     *  let color1 = "rgb(20,60,200)";
+     *  let color2 = "rgba(20,60,200,0.67423)";
+     *  let color3 = "#67DAF0";
+     *  let color4 = "#5567DAF0";
+     *  let color5 = "#F3A";
+     *  let color6 = "#F3A9";
+     *  let color7 = "rgb(200,60,20)";
+     *  let color8 = "rgba(200,60,20,0.98631)";
+     *  
+     *  // ##########  Log Blending  ########## //
+     *  // Shade (Lighten or Darken)
+     *  pSBC ( 0.42, color1 ); // rgb(20,60,200) + [42% Lighter] => rgb(166,171,225)
+     *  pSBC ( -0.4, color5 ); // #F3A + [40% Darker] => #c62884
+     *  pSBC ( 0.42, color8 ); // rgba(200,60,20,0.98631) + [42% Lighter] => rgba(225,171,166,0.98631)
+     *  
+     *  // Shade with Conversion (use "c" as your "to" color)
+     *  pSBC ( 0.42, color2, "c" ); // rgba(20,60,200,0.67423) + [42% Lighter] + [Convert] => #a6abe1ac
+     *  
+     *  // RGB2Hex & Hex2RGB Conversion Only (set percentage to zero)
+     *  pSBC ( 0, color6, "c" ); // #F3A9 + [Convert] => rgba(255,51,170,0.6)
+     *  
+     *  // Blending
+     *  pSBC ( -0.5, color2, color8 ); // rgba(20,60,200,0.67423) + rgba(200,60,20,0.98631) + [50% Blend] => rgba(142,60,142,0.83)
+     *  pSBC ( 0.7, color2, color7 ); // rgba(20,60,200,0.67423) + rgb(200,60,20) + [70% Blend] => rgba(168,60,111,0.67423)
+     *  pSBC ( 0.25, color3, color7 ); // #67DAF0 + rgb(200,60,20) + [25% Blend] => rgb(134,191,208)
+     *  pSBC ( 0.75, color7, color3 ); // rgb(200,60,20) + #67DAF0 + [75% Blend] => #86bfd0
+     *  
+     *  // ##########  Linear Blending  ########## //
+     *  // Shade (Lighten or Darken)
+     *  pSBC ( 0.42, color1, false, true ); // rgb(20,60,200) + [42% Lighter] => rgb(119,142,223)
+     *  pSBC ( -0.4, color5, false, true ); // #F3A + [40% Darker] => #991f66
+     *  pSBC ( 0.42, color8, false, true ); // rgba(200,60,20,0.98631) + [42% Lighter] => rgba(223,142,119,0.98631)
+     *  
+     *  // Shade with Conversion (use "c" as your "to" color)
+     *  pSBC ( 0.42, color2, "c", true ); // rgba(20,60,200,0.67423) + [42% Lighter] + [Convert] => #778edfac
+     *  
+     *  // RGB2Hex & Hex2RGB Conversion Only (set percentage to zero)
+     *  pSBC ( 0, color6, "c", true ); // #F3A9 + [Convert] => rgba(255,51,170,0.6)
+     *  
+     *  // Blending
+     *  pSBC ( -0.5, color2, color8, true ); // rgba(20,60,200,0.67423) + rgba(200,60,20,0.98631) + [50% Blend] => rgba(110,60,110,0.83)
+     *  pSBC ( 0.7, color2, color7, true ); // rgba(20,60,200,0.67423) + rgb(200,60,20) + [70% Blend] => rgba(146,60,74,0.67423)
+     *  pSBC ( 0.25, color3, color7, true ); // #67DAF0 + rgb(200,60,20) + [25% Blend] => rgb(127,179,185)
+     *  pSBC ( 0.75, color7, color3, true ); // rgb(200,60,20) + #67DAF0 + [75% Blend] => #7fb3b9
+     */
+    const pSBC=(p,c0,c1,l)=>{
+        let r,g,b,P,f,t,h,i=parseInt,m=Math.round,a=typeof(c1)=="string";
+        if(typeof(p)!="number"||p<-1||p>1||typeof(c0)!="string"||(c0[0]!='r'&&c0[0]!='#')||(c1&&!a))return null;
+        if(!this.pSBCr)this.pSBCr=(d)=>{
+            let n=d.length,x={};
+            if(n>9){
+                [r,g,b,a]=d=d.split(","),n=d.length;
+                if(n<3||n>4)return null;
+                x.r=i(r[3]=="a"?r.slice(5):r.slice(4)),x.g=i(g),x.b=i(b),x.a=a?parseFloat(a):-1
+            }else{
+                if(n==8||n==6||n<4)return null;
+                if(n<6)d="#"+d[1]+d[1]+d[2]+d[2]+d[3]+d[3]+(n>4?d[4]+d[4]:"");
+                d=i(d.slice(1),16);
+                if(n==9||n==5)x.r=d>>24&255,x.g=d>>16&255,x.b=d>>8&255,x.a=m((d&255)/0.255)/1000;
+                else x.r=d>>16,x.g=d>>8&255,x.b=d&255,x.a=-1
+            }return x};
+        h=c0.length>9,h=a?c1.length>9?true:c1=="c"?!h:false:h,f=pSBCr(c0),P=p<0,t=c1&&c1!="c"?pSBCr(c1):P?{r:0,g:0,b:0,a:-1}:{r:255,g:255,b:255,a:-1},p=P?p*-1:p,P=1-p;
+        if(!f||!t)return null;
+        if(l)r=m(P*f.r+p*t.r),g=m(P*f.g+p*t.g),b=m(P*f.b+p*t.b);
+        else r=m((P*f.r**2+p*t.r**2)**0.5),g=m((P*f.g**2+p*t.g**2)**0.5),b=m((P*f.b**2+p*t.b**2)**0.5);
+        a=f.a,t=t.a,f=a>=0||t>=0,a=f?a<0?t:t<0?a:a*P+t*p:0;
+        if(h)return"rgb"+(f?"a(":"(")+r+","+g+","+b+(f?","+m(a*1000)/1000:"")+")";
+        else return"#"+(4294967296+r*16777216+g*65536+b*256+(f?m(a*255):0)).toString(16).slice(1,f?undefined:-2)
+    }
+    //https://awik.io/determine-color-bright-dark-using-javascript/
+    function lightOrDark(color) {
+        var r, g, b, hsp;// Variables for red, green, blue values
+        // Check the format of the color, HEX or RGB?
+        if (color.match(/^rgb/)) {
+            // If HEX --> store the red, green, blue values in separate variables
+            color = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/);
+            r = color[1];            g = color[2];            b = color[3];
+        } else {
+            // If RGB --> Convert it to HEX: http://gist.github.com/983661
+            color = +("0x" + color.slice(1).replace( 
+            color.length < 5 && /./g, '$&$&'));
+            r = color >> 16;            g = color >> 8 & 255;            b = color & 255;
+        }
+        // HSP (Highly Sensitive Poo) equation from http://alienryderflex.com/hsp.html
+        hsp = Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b)        );
+        if (hsp>127.5) {   
+            return 'light';
+        } else {    
+            return 'dark';
+        }
+    }
+    function HTML(node) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
-        var configAsJson = JSON.stringify(config);  
-        var html = " \
-            <div id='div_" + config.id + "' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
+        var configAsJson = JSON.stringify(node.config);  
+        var className = "custom-" + node.id.replace(".","");
+        var style = "";
+        //generate custom styles if user has selected non-native
+        if(node.colors !== "native"){
+            let cm_ul_color = node.textColor || "#0";//text colour
+            let cm_ul_background_color = node.backgroundColor || "#ffffff"; //fill colour
+            let cm_ul_box_shadow = "0 0 5px " + (node.borderColor ||  "#626262");//border colour
+            let cm_li_hover_color = node.hoverColor || "#b0b0b0";//hover colour
+            let cm_li_disabled_color = node.disabledColor || "#777"; 
+
+            style = String.raw`
+            <style>
+              .${className}.cm_container ul{
+                color: ${cm_ul_color};
+                background-color: ${cm_ul_background_color};
+                box-shadow: ${cm_ul_box_shadow};
+              }
+              .${className}.cm_container li:hover{
+                background-color: ${cm_li_hover_color};
+              }
+              .${className}.cm_container li[disabled=""]{
+                color: ${cm_li_disabled_color};
+              }
+              .${className}.cm_container li[disabled=""]:hover{
+                background-color: inherit;
+              }
+            </style>`
+        }   
+        var html =  style + " \
+            <div id='div_" + node.config.id + "' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
             </div> ";
         return html;
     };
 
 
     var ui = undefined;
-    
     function ContextMenuNode(config) {
         var node = this;
+        node.config = config;
         node.outputField = config.outputField;
         
         if(ui === undefined) {
             ui = RED.require("node-red-dashboard")(RED);
         }
-        
+        node.colors = config.colors || "native";
+        node.textColor = config.textColor || "#0";
+        node.backgroundColor = config.backgroundColor || "#ffffff";
+        node.hoverColor = config.borderColor || "#626262";
+
         // When the user has selected to use theme colors, then just that ...
-        if (config.colors === "theme") {
-            var theme = ui.getTheme();
-            config.textColor = theme["widget-textColor"].value || config.textColor;
-            config.backgroundColor = theme["widget-backgroundColor"].value || config.backgroundColor;
-            config.borderColor = theme["widget-borderColor"].value || config.borderColor;
+        if (node.colors === "theme") {
+            if(ui.getTheme){
+                var theme = ui.getTheme();
+                node.textColor = theme["widget-textColor"].value || node.textColor;
+                node.backgroundColor = theme["widget-backgroundColor"].value || node.backgroundColor;
+                node.hoverColor = theme["widget-borderColor"].value || node.borderColor;
+            } else {
+                node.colors = "native"//default to native
+                node.warn("ui.getTheme() not avaiable. Check dashboard version is up to date");
+                //TODO: consider removing theme option from dropdown if not available?
+            }
+        } 
+
+        if(node.colors !== "native"){
+            let ColDif = lightOrDark(node.hoverColor) == "light" ? -0.1/*10% darker*/ : 0.1/*10% lighter*/
+            node.borderColor = pSBC(ColDif, node.hoverColor ); //lighten/darken border color 10% to hover color
+            node.disabledColor = pSBC(0.5, node.textColor, node.backgroundColor ); //blend 50% from textColor towards background color    
         }
         
         RED.nodes.createNode(this, config);
         
-        var html = HTML(config);
+        var html = HTML(node);
         
         var done = ui.addWidget({
             node: node,
             group: config.group,
-            order: config.order,
+            order: config.order || 0,
             width: config.width,
             height: config.height,
             format: html,
@@ -349,24 +494,9 @@ module.exports = function(RED) {
                         }
                         
                         // Only override the CSS colors when no 'native' colors selected
-                        if ($scope.config.colors !== "native") {                   
-                            if (contextMenuDiv) {
-                                for (var i = 0; i < ulElements.length; i++) {
-                                    ulElements[i].style.boxShadow = "0 0 5px " + $scope.config.borderColor;
-                                }
-                                
-                                ulElements = contextMenuDiv.querySelectorAll('li');
-                                for (var i = 0; i < ulElements.length; i++) {
-                                    if (ulElements[i].attributes["disabled"]) {
-                                        // Apply an opacty 0.5 for disabled menu items
-                                        ulElements[i].style.color = adjust($scope.config.textColor, 100);
-                                    }
-                                    else {
-                                        ulElements[i].style.color = $scope.config.textColor;
-                                    }
-                                    ulElements[i].style.background = $scope.config.backgroundColor;
-                                }
-                            }
+                        if ($scope.config.colors !== "native") {   
+                            $scope.config.cls = "custom-" + $scope.config.id.replace(".",""); //compute the clas name      
+                            $(contextMenuDiv).addClass($scope.config.cls); //add class name
                         }
                     }
                 });                        

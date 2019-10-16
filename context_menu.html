@@ -57,7 +57,7 @@
             yCoordinate: {value: 50},
             menu: {value: "fixed"},
             menuItems: {value: []},
-            colors: {value: 'custom'},
+            colors: {value: 'native'},
             // By default we set the same colors as in the ContextMenu library CSS file
             textColor: {value: '#000000'},
             backgroundColor: {value: '#ffffff'},
@@ -890,6 +890,7 @@
                 else {
                     $(".contextmenu-customColours").hide();
                 }
+                updateEditorLayout();//update height of list etc
             });
             $("#node-input-colors").change();
         },
@@ -1021,7 +1022,7 @@
     <div class="form-row">
         <label for="node-input-colors"><i class="fa fa-cog"></i> Colours</label>
         <select id="node-input-colors">
-            <option value="native">Native</option>
+            <option value="native">Default</option>
             <option value="custom">Custom</option> 
             <option value="theme">Match dashboard theme</option>
         </select>
@@ -1038,7 +1039,7 @@
     </div>    
     
     <div class="form-row contextmenu-customColours">
-        <label for="node-input-borderColor"><i class="fa fa-paint-brush"></i> Border</span></label>
+        <label for="node-input-borderColor"><i class="fa fa-paint-brush"></i> Hover</span></label>
         <input type="color" id="node-input-borderColor"/>
     </div>
 </script>
@@ -1154,7 +1155,7 @@
         <div style="padding-left: 15px">
             This determines which colors will be used for the menu.
             <ul>
-                <li>Native - The default CSS colors of this node will be used.</li>
+                <li>Default - The default menu colors will be used.</li>
                 <li>Custom - Three color pickers will be displayed to specify custom colors.</li>
                 <li>Match dashboard theme - The colors of the currently selected dashboard theme will be used.</li>
             </ul>
