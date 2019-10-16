@@ -183,12 +183,13 @@ module.exports = function(RED) {
             if(ui.getTheme){
                 var theme = ui.getTheme();
                 node.textColor = theme["widget-textColor"].value || node.textColor;
-                node.backgroundColor = theme["widget-backgroundColor"].value || node.backgroundColor;
-                node.hoverColor = theme["widget-borderColor"].value || node.borderColor;
+                node.backgroundColor = theme["group-backgroundColor"].value || node.backgroundColor;
+                node.hoverColor = theme["widget-backgroundColor"].value || node.borderColor;
             } else {
                 node.colors = "native"//default to native
                 node.warn("ui.getTheme() not avaiable. Check dashboard version is up to date");
                 //TODO: consider removing theme option from dropdown if not available?
+                //Currently, native colors will be used if old dashboard present.
             }
         } 
 
