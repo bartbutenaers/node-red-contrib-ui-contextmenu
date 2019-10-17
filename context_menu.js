@@ -331,6 +331,15 @@ module.exports = function(RED) {
                     $scope.config = config;
                     $scope.contextmenuItems = null;
                     
+                    // Ignore all input messages that arrive within 1 second after creation of this widget.
+                    // This way we can avoid the last old message being resend from server to the client...
+                    // See https://discourse.nodered.org/t/refresh-ui-node/13921/40
+                    $scope.acceptMessages = false;
+                    setTimeout(function() { 
+                        $scope.acceptMessages = true; 
+                    } , 1000);
+            
+                    
                     // Migrate older nodes, which had no auto hide functionality
                     $scope.config.intervalLength = $scope.config.intervalLength || 0;
                     $scope.config.intervalUnit   = $scope.config.intervalUnit || "secs";
@@ -413,6 +422,10 @@ module.exports = function(RED) {
                 $scope.$watch('msg', function(msg) {
                     // Ignore undefined messages.
                     if (!msg) {
+                        return;
+                    }
+                    
+                    if (!$scope.acceptMessages) {
                         return;
                     }
 
