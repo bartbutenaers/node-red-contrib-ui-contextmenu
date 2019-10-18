@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+var path = require('path');
 module.exports = function(RED) {
     var settings = RED.settings;
 
@@ -337,9 +338,7 @@ module.exports = function(RED) {
                     $scope.acceptMessages = false;
                     setTimeout(function() { 
                         $scope.acceptMessages = true; 
-                    } , 1000);
-            
-                    
+                    } , 1000); 
                     // Migrate older nodes, which had no auto hide functionality
                     $scope.config.intervalLength = $scope.config.intervalLength || 0;
                     $scope.config.intervalUnit   = $scope.config.intervalUnit || "secs";
@@ -400,8 +399,8 @@ module.exports = function(RED) {
                             }
                             else {
                                 var urls = [
-                                    '/ui_context_menu/lib/contextmenu.js',
-                                    '/ui_context_menu/lib/contextmenu.css'
+                                    'ui_context_menu/contextmenu.js',
+                                    'ui_context_menu/contextmenu.css'
                                 ];
                                 loadJavascriptAndCssFiles(urls, 
                                     function(){
@@ -417,6 +416,7 @@ module.exports = function(RED) {
                             console.error(error)
                         }
                     }
+                   
                 }
 
                 $scope.$watch('msg', function(msg) {
@@ -425,7 +425,7 @@ module.exports = function(RED) {
                         return;
                     }
                     
-                    if (!$scope.acceptMessages) {
+                    if (!$scope.acceptMessages) {                      
                         return;
                     }
 
@@ -527,15 +527,15 @@ module.exports = function(RED) {
 
     RED.nodes.registerType("ui_context_menu", ContextMenuNode);
 
-        // Make all the static resources from this node public available (i.e. third party JQuery plugin tableHeadFixer.js).
-    // TODO is dit nodig?  of gewoon een script file includen op de html
-    RED.httpAdmin.get('/ui_context_menu/*', function(req, res){
+
+    var uipath = 'ui';
+    if (RED.settings.ui) { uipath = RED.settings.ui.path; }
+    var fullPath = path.join(RED.settings.httpNodeRoot, uipath, '/ui_context_menu/*').replace(/\\/g, '/');   
+    RED.httpNode.get(fullPath, function (req, res) {
         var options = {
-            root: __dirname /*+ '/static/'*/,
+            root: __dirname + '/lib/',
             dotfiles: 'deny'
         };
-       
-        // Send the requested file to the client (in this case it will be tableHeadFixer.js)
         res.sendFile(req.params[0], options)
     });
 }
