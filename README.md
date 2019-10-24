@@ -156,6 +156,14 @@ Specify how the colors of the context menu should look like:
 
    ![Custom colors](https://user-images.githubusercontent.com/14224149/66244438-b8576280-e708-11e9-9931-2399e414ef7c.png)
 
+Demo for the dashboard's built-in *dark* theme (menu1=custom, menu2=theme, menu2=native):
+
+![demo_dark_theme](https://user-images.githubusercontent.com/14224149/67512913-176e1e80-f69a-11e9-8618-38edb8447d9d.gif)
+
+Demo for the dashboard's built-in *light* theme (menu1=custom, menu2=theme, menu2=native):
+
+![demo_light_theme](https://user-images.githubusercontent.com/14224149/67512904-150bc480-f69a-11e9-9981-c49aa4e7cbeb.gif)
+
 ### Output message
 As soon as a menu item has been clicked, an output message will be send.  It is up to the next nodes in the flow, to determine how the menu item should be handled.  
 
