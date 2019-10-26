@@ -6,16 +6,8 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
 ```
-npm install bartbutenaers/node-red-contrib-ui-contextmenu
+npm install node-red-contrib-ui-contextmenu
 ```
-
-***!!!!! USE THE ABOVE COMMAND TO INSTALL IT DIRECTLY FROM GITHUB (NOT AVAILABLE ON NPM YET) !!!!***
-
-***!!!!! ONLY USE IT FOR TESTING PURPOSES !!!!***
-
-***!!!!! FOLLOW OUR [DISCUSSION](https://discourse.nodered.org/t/announce-node-red-contrib-ui-contextmenu-first-beta/16211) ON THE NODE-RED FORUM !!!!***
-
-***!!!!! HAVE A LOOK AT THE ISSUES LIST (ABOVE), BEFORE REGISTERING A NEW ISSUE !!!!***
 
 ## Node usage
 Although this node can display a context menu on top of any other dashboard widget, in fact we implemented this node to be used in combination with our [node-red-contrib-ui-svg](https://github.com/bartbutenaers/node-red-contrib-ui-svg) node.
