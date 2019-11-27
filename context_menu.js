@@ -526,12 +526,20 @@ module.exports = function(RED) {
     }
 
     RED.nodes.registerType("ui_context_menu", ContextMenuNode);
-
-
-    var uipath = 'ui';
-    if (RED.settings.ui) { uipath = RED.settings.ui.path; }
-    var fullPath = path.join(RED.settings.httpNodeRoot, uipath, '/ui_context_menu/*').replace(/\\/g, '/');   
-    RED.httpNode.get(fullPath, function (req, res) {
+	
+    // By default the UI path in the settings.js file will be in comment:
+    //     //ui: { path: "ui" },
+    // But as soon as the user has specified a custom UI path there, we will need to use that path:
+    //     ui: { path: "mypath" },
+    var uiPath = ((RED.settings.ui || {}).path) || 'ui';
+	
+    // Create the complete server-side path
+    uiPath = '/' + uiPath + '/ui_context_menu';
+    
+    // Replace a sequence of multiple slashes (e.g. // or ///) by a single one
+    uiPath = uiPath.replace(/\/+/g, '/');
+	 
+    RED.httpNode.get(uiPath, function (req, res) {
         var options = {
             root: __dirname + '/lib/',
             dotfiles: 'deny'
