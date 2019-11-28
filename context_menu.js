@@ -534,7 +534,7 @@ module.exports = function(RED) {
     var uiPath = ((RED.settings.ui || {}).path) || 'ui';
 	
     // Create the complete server-side path
-    uiPath = '/' + uiPath + '/ui_context_menu';
+    uiPath = '/' + uiPath + '/ui_context_menu/*';
     
     // Replace a sequence of multiple slashes (e.g. // or ///) by a single one
     uiPath = uiPath.replace(/\/+/g, '/');
