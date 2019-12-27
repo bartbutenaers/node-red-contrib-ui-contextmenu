@@ -9,6 +9,8 @@ Run the following npm command in your Node-RED user directory (typically ~/.node
 npm install node-red-contrib-ui-contextmenu
 ```
 
+It is advised to use ***Dashboard version 2.16.3 or above***, to avoid that every context menu uses *(empty) space* in the dashboard!  See this [discussion](https://discourse.nodered.org/t/custom-dashboard-node-without-md-card-possible/14919/20?u=bartbutenaers) for more detailed information.
+
 ## Node usage
 Although this node can display a context menu on top of any other dashboard widget, in fact we implemented this node to be used in combination with our [node-red-contrib-ui-svg](https://github.com/bartbutenaers/node-red-contrib-ui-svg) node.
 
