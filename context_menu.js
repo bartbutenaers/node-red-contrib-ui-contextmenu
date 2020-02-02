@@ -339,9 +339,23 @@ module.exports = function(RED) {
                     setTimeout(function() { 
                         $scope.acceptMessages = true; 
                     } , 1000); 
+                    
                     // Migrate older nodes, which had no auto hide functionality
-                    $scope.config.intervalLength = $scope.config.intervalLength || 0;
-                    $scope.config.intervalUnit   = $scope.config.intervalUnit || "secs";
+                    if(!$scope.config.hasOwnProperty('intervalLength')) {
+                        $scope.config.intervalLength = 0;
+                    }
+                    if(!$scope.config.hasOwnProperty('intervalUnit')) {
+                        $scope.config.intervalUnit = "secs";
+                    }
+                    if(!$scope.config.hasOwnProperty('startTimerAtOpen')) {
+                        $scope.config.startTimerAtOpen = false;
+                    }
+                    if(!$scope.config.hasOwnProperty('startTimerAtLeave')) {
+                        $scope.config.startTimerAtLeave = true;
+                    }
+                    if(!$scope.config.hasOwnProperty('stopTimerAtEnter')) {
+                        $scope.config.stopTimerAtEnter = true;
+                    }
                     
                     // Convert the 'intervalLength' value to milliseconds (based on the selected time unit)
                     switch($scope.config.intervalUnit) {
@@ -488,22 +502,40 @@ module.exports = function(RED) {
                         // Otherwise the context menu should be hidden after the specified interval.
                         // We will start counting the seconds, from the moment on the context menu has been left ...
                         if ($scope.intervalLengthMsecs > 0) {
-                            
-                            for (var i = 0; i < ulElements.length; i++) {
-                                ulElements[i].addEventListener('mouseleave', function() {
-                                    console.log("Timer started when leaving the context menu");
+                            // When required, start the timer immediately
+                            if ($scope.config.startTimerAtOpen) {
+                                if (!$scope.autoHideTimer) {
                                     $scope.autoHideTimer = setTimeout(function() { 
                                         $scope.contextMenu.hide();
                                         $scope.autoHideTimer = null;
                                     }, $scope.intervalLengthMsecs);
-                                });
-                                ulElements[i].addEventListener('mouseenter', function() {
-                                    console.log("Timer stopped when entering the context menu");
-                                    if ($scope.autoHideTimer) {
-                                        clearTimeout($scope.autoHideTimer);
-                                        $scope.autoHideTimer = null;
-                                    }
-                                });
+                                }
+                            }
+                            
+                            // When required, start the timer when the mouse leaves the context menu.
+                            if ($scope.config.startTimerAtLeave) {
+                                for (var i = 0; i < ulElements.length; i++) {
+                                    ulElements[i].addEventListener('mouseleave', function() {
+                                        if (!$scope.autoHideTimer) {
+                                            $scope.autoHideTimer = setTimeout(function() { 
+                                                $scope.contextMenu.hide();
+                                                $scope.autoHideTimer = null;
+                                            }, $scope.intervalLengthMsecs);
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            // When required, stop the timer when the mouse enters the context menu again.
+                            if ($scope.config.stopTimerAtEnter) {
+                                for (var i = 0; i < ulElements.length; i++) {
+                                    ulElements[i].addEventListener('mouseenter', function() {
+                                        if ($scope.autoHideTimer) {
+                                            clearTimeout($scope.autoHideTimer);
+                                            $scope.autoHideTimer = null;
+                                        }
+                                    });
+                                }
                             }
                         }
                         
