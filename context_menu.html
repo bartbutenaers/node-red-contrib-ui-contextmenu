@@ -64,6 +64,9 @@
             borderColor: {value: '#626262'},
             intervalLength: {value: 0},
             intervalUnit: {value: "secs"},
+            startTimerAtOpen: {value: false},
+            startTimerAtLeave: {value: true},
+            stopTimerAtEnter: {value: true},
             name: {value: ''}
         },
         inputs:1,
@@ -76,10 +79,23 @@
         },
         oneditprepare: function() {
             var node = this;
-            
+     
             // Migrate older nodes, that didn't have the auto-hide feature yet
-            $('#node-input-intervalLength').val(this.intervalLength || 0);
-            $('#node-input-intervalUnit').val(this.intervalUnit || "secs");
+            if(node.intervalLength === undefined) {
+                $('#node-input-intervalLength').val(0);
+            }
+            if(node.intervalUnit === undefined) {
+                $('#node-input-intervalUnit').val("secs");
+            }
+            if(node.startTimerAtOpen === undefined) {
+                $('#node-input-startTimerAtOpen').prop('checked', false);
+            }
+            if(node.startTimerAtLeave === undefined) {
+                $('#node-input-startTimerAtLeave').prop('checked', true);
+            }
+            if(node.stopTimerAtEnter === undefined) {
+                $('#node-input-stopTimerAtEnter').prop('checked', true);
+            }
             
             // List of all available FontAwesome icons (version 4.7.0)
             var iconCssClassNames = [
@@ -1009,6 +1025,8 @@
         <ol id="node-input-menuItems-container"></ol>
     </div>
     
+    </br>
+    
     <div class="form-row">
         <label for="node-input-intervalLength"><i class="fa fa-clock-o"></i> Auto hide</label>
         <input type="number" id="node-input-intervalLength" style="width:180px;">
@@ -1018,6 +1036,26 @@
             <option value="mins">Minutes</option>
         </select>
     </div>
+    
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-startTimerAtOpen" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-startTimerAtOpen" style="width:70%;"> Start timer when the contextmenu is displayed</label>
+    </div>
+    
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-startTimerAtLeave" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-startTimerAtLeave" style="width:70%;"> Start timer when mouse leaves the contextmenu</label>
+    </div>
+    
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-stopTimerAtEnter" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-stopTimerAtEnter" style="width:70%;"> Stop timer when mouse enters the contextmenu</label>
+    </div>
+    
+    </br>
     
     <div class="form-row">
         <label for="node-input-colors"><i class="fa fa-cog"></i> Colours</label>
@@ -1149,7 +1187,12 @@
         </div>
         <h4>Auto hide</h4>
         <div style="padding-left: 15px">
-            When this value is <code>0</code> the context menu will stay visible, until a menu item is selected or outside the menu is being clicked.  When this value is e.g. <code>3 seconds</code> this means that the context menu will automatically disappear when the context menu is out of focus during at least 3 seconds.
+            When this value is <code>0</code> the context menu will stay visible, until a menu item is selected or outside the menu is being clicked.  When this value is e.g. <code>3 seconds</code> this means that the context menu will automatically disappear when the context menu is out of focus during at least 3 seconds.  Via a series of checkboxes, you can specify when the timer needs to start and stop:
+            <ul>
+                <li>Start timer when the contextmenu is displayed.</li>
+                <li>Start timer when mouse leaves the contextmenu.</li>
+                <li>Stop timer when mouse enters the contextmenu.</li>
+            </ul>
         </div>     
         <h4>Colors</h4>
         <div style="padding-left: 15px">
