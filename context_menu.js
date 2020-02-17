@@ -250,20 +250,24 @@ module.exports = function(RED) {
                     if (!orig || !orig.msg) {
                         return;//TODO: what to do if empty? Currently, halt flow by returning nothing
                     }
-                    var newMsg = {
-                        menuId: orig.msg.menuItem.id,
-                        menuindex: orig.msg.menuItem.index,
-                        topic: orig.msg.menuItem.topic,
-                        payload: orig.msg.menuItem.payload
-                    };
-                    RED.util.evaluateNodeProperty(orig.msg.menuItem.payload,orig.msg.menuItem.payloadType,node,orig.msg,(err,value) => {
+                    
+                    var menuItem = orig.msg.menuItem;
+                    var lastMsg  = orig.msg.lastMsg;
+                    
+                    // Enrich the last (received) message with some information about the clicked menu item
+                    lastMsg.menuId    = menuItem.id;
+                    lastMsg.menuindex = menuItem.index;
+                    lastMsg.topic     = menuItem.topic;
+                    
+                    // Enrich the last message with our payload, in the specified output message field
+                    RED.util.evaluateNodeProperty(menuItem.payload,menuItem.payloadType,node,lastMsg,(err,value) => {
                         if (err) {
                             throw err;//TODO: is this an error object? or should I create new Error(err)?
                         } else {
-                            setResult(newMsg, node.outputField || orig.msg.menuItem.outputField, value); 
+                            setResult(lastMsg, node.outputField || menuItem.outputField, value); 
                         }
                     }); 
-                    return newMsg;
+                    return lastMsg;
                 } catch (error) {
                     node.error(error);
                 }
@@ -369,7 +373,6 @@ module.exports = function(RED) {
                         default_text: "",
                         allow_blank_item: true,
                         callback: function(evt, item) {
-
                             let menuItem = {
                                 index: item.index,
                                 id: item.id || item.path,
@@ -383,7 +386,9 @@ module.exports = function(RED) {
                                 topic:  item.topic || item.path,
                                 outputField: item.outputField
                             }
-                            $scope.send({menuItem: menuItem});                                    
+                            
+                            // Show the clicked menu item and the last received msg to the server
+                            $scope.send({ menuItem: menuItem, lastMsg: $scope.msg || {} });                                    
                         }
                     }
                     
