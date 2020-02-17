@@ -250,28 +250,25 @@ module.exports = function(RED) {
                     if (!orig || !orig.msg) {
                         return;//TODO: what to do if empty? Currently, halt flow by returning nothing
                     }
-                    
-                    var menuItem = orig.msg.menuItem;
-                    var lastMsg  = orig.msg.lastMsg;
-                    
-                    // Enrich the last (received) message with some information about the clicked menu item
-                    lastMsg.menuId    = menuItem.id;
-                    lastMsg.menuindex = menuItem.index;
-                    lastMsg.topic     = menuItem.topic;
-                    
-                    // Enrich the last message with our payload, in the specified output message field
-                    RED.util.evaluateNodeProperty(menuItem.payload,menuItem.payloadType,node,lastMsg,(err,value) => {
+                    var newMsg = {
+                        menuId: orig.msg.menuItem.id,
+                        menuindex: orig.msg.menuItem.index,
+                        topic: orig.msg.menuItem.topic,
+                        payload: orig.msg.menuItem.payload,
+                        sourceMsg: orig.msg.sourceMsg // The original input message
+                    };
+                    RED.util.evaluateNodeProperty(orig.msg.menuItem.payload,orig.msg.menuItem.payloadType,node,orig.msg,(err,value) => {
                         if (err) {
                             throw err;//TODO: is this an error object? or should I create new Error(err)?
                         } else {
-                            setResult(lastMsg, node.outputField || menuItem.outputField, value); 
+                            setResult(newMsg, node.outputField || orig.msg.menuItem.outputField, value); 
                         }
                     }); 
-                    return lastMsg;
+                    return newMsg;
                 } catch (error) {
                     node.error(error);
                 }
-                
+               
             },
             initController: function($scope, events) {
                 // Remark: all client-side functions should be added here!  
@@ -388,7 +385,7 @@ module.exports = function(RED) {
                             }
                             
                             // Show the clicked menu item and the last received msg to the server
-                            $scope.send({ menuItem: menuItem, lastMsg: $scope.msg || {} });                                    
+                            $scope.send({ menuItem: menuItem, sourceMsg : $scope.msg || {} });                                    
                         }
                     }
                     
@@ -438,7 +435,7 @@ module.exports = function(RED) {
                     if (!msg) {
                         return;
                     }
-
+debugger;
                     if (!$scope.config) {
                         console.log("ui_context_menu: $scope.config is empty :(")
                         return;
