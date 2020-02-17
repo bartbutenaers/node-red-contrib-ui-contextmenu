@@ -435,7 +435,7 @@ module.exports = function(RED) {
                     if (!msg) {
                         return;
                     }
-debugger;
+
                     if (!$scope.config) {
                         console.log("ui_context_menu: $scope.config is empty :(")
                         return;
