@@ -1223,10 +1223,13 @@
     <h3>Output</h3>
     <dl class="message-properties">
         <dt><i>payload</i> <span class="property-type">number|string|boolean|object|buffer</span></dt>
-        <dd><code>msg.topic</code> will contain whatever is configured in 'topic'</dd>
         <dd><code>msg.payload*</code> will contain whatever is configured in 'payload'. payload may be changed by setting "Output To" </dd>
-        <dd>if <code>topic</code> is not configured for the menu item, it will default to a string containing the key of clicked item</dd>
         <dd>if <code>payload</code> is not configured for the menu item, it will default to a string containing the label of clicked item</dd>
+        <dt><i>topic</i> <span class="property-type">string</span></dt>
+        <dd><code>msg.topic</code> will contain whatever is configured in 'topic'</dd>
+        <dd>if <code>topic</code> is not configured for the menu item, it will default to a string containing the key of clicked item</dd>
+        <dt><i>sourceMsg</i> <span class="property-type">object</span></dt>
+        <dd><code>msg.sourceMsg</code> will contain the original input message, which has triggered the display of the context menu. </dd>
     </dl>
 
 </script>
