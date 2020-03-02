@@ -159,7 +159,7 @@ module.exports = function(RED) {
             </style>`
         }   
         var html =  style + " \
-            <div id='div_" + node.config.id + "' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
+            <div id='div_" + node.config.id + "' style='z-index: 999999;' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
             </div> ";
         return html;
     };
