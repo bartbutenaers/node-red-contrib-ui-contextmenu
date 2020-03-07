@@ -159,7 +159,7 @@ module.exports = function(RED) {
             </style>`
         }   
         var html =  style + " \
-            <div id='div_" + node.config.id + "' style='z-index: 999999;' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
+            <div id='div_" + node.config.id + "' ng-init='init(" + configAsJson + ")' class='menu' display='none';> \
             </div> ";
         return html;
     };
@@ -490,6 +490,9 @@ module.exports = function(RED) {
                         var contextMenuNum = $scope.contextMenu.num;
                         var contextMenuDiv = document.getElementById('cm_' + contextMenuNum);
                         var ulElements = contextMenuDiv.querySelectorAll('ul');
+			    
+			// Make sure the contextmenu is always on top, by adding a super high z-index.
+                        contextMenuDiv.style["z-index"] = 999999;
                             
                         // When the auto hide interval is 0, then there is no auto hiding.
                         // Otherwise the context menu should be hidden after the specified interval.
