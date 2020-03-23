@@ -68,11 +68,13 @@
     opacity: 0;
     transition: opacity 0.2s;
     visibility: hidden;
+    transition: 0.2s 1s; /* delay of 1 seconds on hover off */
   }
   
   .cm_container li:hover > ul{
     opacity: 1;
     visibility: visible;
+    transition-delay: 0s; /* react immediately on hover */
   }
   
   .cm_container li.cm_divider{
