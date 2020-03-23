@@ -66,8 +66,7 @@
     top: 0;
     left: 100%;
     opacity: 0;
-    transition: opacity 0.2s;
-    visibility: hidden;
+    visibility: hidden; 
     transition: 0.2s 1s; /* delay of 1 seconds on hover off */
   }
   
@@ -89,7 +88,7 @@
   }
   
   .cm_container.cm_border_right > ul ul{
-    left: -90%;
+    left: -88%; /* reduced from 90 to 88 - slight improvement on layout */
   }
   
   .cm_container.cm_border_bottom > ul ul{
