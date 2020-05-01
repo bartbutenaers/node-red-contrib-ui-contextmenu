@@ -393,41 +393,38 @@ module.exports = function(RED) {
                         options.fontSize = $scope.config.fontSize + "px";
                     }
                    
-                    if (!$scope.contextMenu) {
-                        // The ContextMenu instance creates a container, which is a DIV element that contains an UL list (of menu items).
-                        // Since there is no ContextMenu instance (anymore), all old containers should be removed from the DOM.
-                        // These containers are added directly under the 'body', so we have to make sure we don't delete similar other nodes.
-                        // Therefore we delete DIV elements with id starting with 'cm_' and class 'cm_container'.
-                        var contextMenuContainers = document.querySelectorAll("div[id^='cm_'].cm_container");
-                        Array.prototype.forEach.call( contextMenuContainers, function( node ) {
-                            node.parentNode.removeChild( node );
-                        });
-                        
-                        try {
-                            // Only load the context menu libraries from the server, when not loaded yet
-                            if(window.ContextMenu){
-                                $scope.contextMenu = new ContextMenu([],options); 
-                            }
-                            else {
-                                var urls = [
-                                    'ui_context_menu/contextmenu.js',
-                                    'ui_context_menu/contextmenu.css'
-                                ];
-                                loadJavascriptAndCssFiles(urls, 
-                                    function(){
-                                        //success
-                                        $scope.contextMenu = new ContextMenu([],options);  
-                                    },
-                                    function(){
-                                        //fail
-                                    });
-                            }
+                    // The ContextMenu instance creates a container, which is a DIV element that contains an UL list (of menu items).
+                    // Since there is no ContextMenu instance (anymore), all old containers should be removed from the DOM.
+                    // These containers are added directly under the 'body', so we have to make sure we don't delete similar other nodes.
+                    // Therefore we delete DIV elements with id starting with 'cm_' and class 'cm_container'.
+                    var contextMenuContainers = document.querySelectorAll("div[id^='cm_'].cm_container");
+                    Array.prototype.forEach.call( contextMenuContainers, function( node ) {
+                        node.parentNode.removeChild( node );
+                    });
+                    
+                    try {
+                        // Only load the context menu libraries from the server, when not loaded yet
+                        if(window.ContextMenu){
+                            $scope.contextMenu = new ContextMenu([],options); 
                         }
-                        catch (error) {
-                            console.error(error)
+                        else {
+                            var urls = [
+                                'ui_context_menu/contextmenu.js',
+                                'ui_context_menu/contextmenu.css'
+                            ];
+                            loadJavascriptAndCssFiles(urls, 
+                                function(){
+                                    //success
+                                    $scope.contextMenu = new ContextMenu([],options);  
+                                },
+                                function(){
+                                    //fail
+                                });
                         }
                     }
-                   
+                    catch (error) {
+                        console.error(error)
+                    }
                 }
 
                 $scope.$watch('msg', function(msg) {
