@@ -436,6 +436,13 @@ module.exports = function(RED) {
                         return;
                     }
 
+                    //prevent client side replays from showing the menu when switching dashboard tabs
+                    if(msg._ui_cm_already_seen){
+                        console.log("ui_context_menu: msg already seen - exiting!")
+                        return;
+                    }
+                    msg._ui_cm_already_seen = true;
+
                     if (!$scope.config) {
                         console.log("ui_context_menu: $scope.config is empty :(")
                         return;
