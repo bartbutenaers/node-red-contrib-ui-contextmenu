@@ -64,10 +64,10 @@
   .cm_container li > ul{
     position: absolute;
     top: 0;
-    left: 100%;
+    left: 96%;
     opacity: 0;
     visibility: hidden; 
-    transition: 0.2s 1s; /* delay of 1 seconds on hover off */
+    transition: 0.2s 0.4s; 
   }
   
   .cm_container li:hover > ul{
@@ -86,12 +86,27 @@
   .cm_container li.cm_divider:hover{
     background-color: inherit;
   }
-  
-  .cm_container.cm_border_right > ul ul{
-    left: -88%; /* reduced from 90 to 88 - slight improvement on layout */
+
+  .cm_container.cm_border_right > ul{
+    left: -88%; 
   }
-  
-  .cm_container.cm_border_bottom > ul ul{
+
+  .cm_container > ul ul.cm_sub_fly_left{
+    left: -88%; 
+  }
+  .cm_container > ul ul.cm_sub_fly_right{
+    left: 96%; 
+  }
+  .cm_container > ul ul.cm_sub_fly_up{
+    top: unset;
+    bottom: 0;
+  }
+  .cm_container > ul ul.cm_sub_fly_down{
+    top: 0;
+    bottom: unset;
+  }
+
+  .cm_container.cm_border_bottom > ul{
     top: unset;
     bottom: 0;
   }
