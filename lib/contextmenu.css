@@ -92,7 +92,9 @@
   }
 
   .cm_container > ul ul.cm_sub_fly_left{
-    left: -88%; 
+    /* left: -88%;  */
+    left: unset;
+    right: 82%;
   }
   .cm_container > ul ul.cm_sub_fly_right{
     left: 96%; 
