@@ -471,7 +471,7 @@ module.exports = function(RED) {
                                     label: menuItem.label,
                                     text: menuItem.label,
                                     payload: menuItem.payload,
-                                    payloadType: menuItem.payload,
+                                    payloadType: menuItem.payloadType,
                                     topic:  menuItem.topic,
                                     outputField: menuItem.outputField
                                 })
