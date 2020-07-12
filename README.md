@@ -13,6 +13,8 @@ npm install node-red-contrib-ui-contextmenu
 + The context menu will ***only appear when its dashboard group (see config screen) is currently visible***!  This is important when being used in combination with other nodes: e.g. an SVG node and ContextMenu node always need to be on the same dashboard group, otherwise the contextmenu will never appear!
 + The output messages from the ***SVG node 2.x.x contains a breaking change***, which will cause context menus not appearing anymore!  See [readme](https://github.com/bartbutenaers/node-red-contrib-ui-svg/) of the SVG node for guidelines.
 
+Remark: all below examples are also available via the Import menu of the Node-RED flow editor.
+
 ## Node usage
 
 There are a few common ways to use this node:
