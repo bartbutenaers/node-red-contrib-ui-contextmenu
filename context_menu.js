@@ -128,6 +128,49 @@ module.exports = function(RED) {
         }
     }
     function HTML(node) {
+        // Migrate existing nodes (containing the old 'position' field), which have no typedinputs for the location yet.
+        // Do this migration server-side, so the beforeEmit function can used the migrated config.
+        switch (node.config.position) {
+            case "fixed":
+                // Copy the obsolete x and y coordinates to the new typedinputs
+                node.config.inputPositionXField = node.config.xCoordinate;
+                node.config.inputPositionYField = node.config.yCoordinate;
+                node.config.inputPositionXType = 'num';
+                node.config.inputPositionYType = 'num';
+                break;
+            case "msg":
+                // Copy the obsolete msg.position field where the location was being expected to arrive in the past
+                node.config.inputPositionXField = "position.x";
+                node.config.inputPositionYField = "position.y";
+                node.config.inputPositionXType = 'msg';
+                node.config.inputPositionYType = 'msg';
+                break;
+            default:
+                // Recent node, so no migration needed
+        }
+        
+        delete node.config.position;
+        delete node.config.xCoordinate;
+        delete node.config.yCoordinate;
+        
+        // Migrate existing nodes (containing the old 'position' field), which have no typedinput for the menu yet
+        switch (node.config.menu) {
+            case "fixed":         
+                node.config.inputMenuType = 'fixed';
+                break;
+            case "msg":
+                // Copy the obsolete msg.menu field where the menu was being expected to arrive in the past
+                node.config.inputMenuField = "menu";          
+                node.config.inputMenuType = 'msg';
+                break;                
+            default:
+                // Recent node, so no migration needed
+        }
+        
+        delete node.config.menu;
+        
+        
+        
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(node.config);  
         var className = "custom-" + node.id.replace(".","");
@@ -227,23 +270,68 @@ module.exports = function(RED) {
                 // ******************************************************************************************
                 // Would like to ignore invalid input messages, but that seems not to possible in UI nodes:
                 // See https://discourse.nodered.org/t/custom-ui-node-not-visible-in-dashboard-sidebar/9666
-                // We will workaround it by sending 'null' message fields to the dashboard.
+                // We will workaround it by sending msg.invalid_message=true to the dashboard.
                 
-                if (config.position === "msg") {
-                    if (!msg.position || !msg.position.x || !msg.position.y || isNaN(msg.position.x) || isNaN(msg.position.y)) {
-                        node.error("When using message based position, the msg.position should x and y numbers");
-                        msg.position = null;
+                var newMsg = {};
+
+                if (config.inputPositionXType === "msg") {
+                    try {
+                        // Get the x position from the specified message field
+                        newMsg.x = RED.util.getMessageProperty(msg, config.inputPositionXField);
+                    } 
+                    catch(err) {
+                        node.error("Error getting x position from msg." + config.inputPositionXField + " : " + err.message);
+                        msg.invalid_message = true;
+                        return { msg: msg };
+                    }
+                    
+                    if (isNaN(newMsg.x)) {
+                        node.error("The x position in msg." + config.inputPositionXField + " should be a number");
+                        msg.invalid_message = true;
+                        return { msg: msg };
+                    }
+                }
+
+                if (config.inputPositionYType === "msg") {
+                    try {
+                        // Get the y position from the specified message field
+                        newMsg.y = RED.util.getMessageProperty(msg, config.inputPositionYField);
+                    } 
+                    catch(err) {
+                        node.error("Error getting y position from msg." + config.inputPositionYField + " : " + err.message);
+                        msg.invalid_message = true;
+                        return { msg: msg };
+                    }
+                    
+                    if (isNaN(newMsg.y)) {
+                        node.error("The y position in msg." + config.inputPositionYField + " should be a number");
+                        msg.invalid_message = true;
+                        return { msg: msg };
                     }
                 }
     
-                if (config.menu === "msg") {
-                    if (!msg.menu || typeof msg.menu != "object" ) {
+                if (config.inputMenuType === "msg") {
+                    try {
+                        // Get the menu from the specified message field
+                        newMsg.menu = RED.util.getMessageProperty(msg, config.inputMenuField);
+                    } 
+                    catch(err) {
+                        node.error("Error getting the menu from msg." + config.inputMenuField + " : " + err.message);
+                        msg.invalid_message = true;
+                        return { msg: msg };
+                    }
+                    
+                    if (typeof newMsg.menu != "object" ) {
                         node.error("When using message based menu items, the msg.menu should contain an object containing menu items");
-                        msg.position = null;
+                        msg.invalid_message = true;
+                        return { msg: msg };
                     }
                 }
-                    
-                return { msg: msg };
+                
+                // Seem that all the specified msg fields are available, so send a message to the client (containing msg.x, msg.y, msg.z).
+                // This way the message has been flattened, so the client doesn't need to access the nested msg properties.
+                // See https://discourse.nodered.org/t/red-in-ui-nodes/29824/2
+                return { msg: newMsg };
             },
             beforeSend: function (msg, orig) {
                 try {
@@ -288,21 +376,6 @@ module.exports = function(RED) {
                         return lastIndex !== -1 && lastIndex === position;
                     };
                 }
-                
-                function getPosition(scope, msg){
-                    var xp = 0,yp = 0;
-                    if (scope.config.position === "msg" && msg && msg.position) {
-                        // Position the context menu based on the coordinates in the message
-                        xp = msg.position.x;
-                        yp  = msg.position.y;
-                    }
-                    else {
-                        // Position the context menu based on the coordinates in the config screen
-                        xp = scope.config.xCoordinate;
-                        yp  = scope.config.yCoordinate;
-                    }
-                    return {clientX: parseInt(xp), clientY: parseInt(yp)};
-                }
 
                 //https://stackoverflow.com/questions/14919894/getscript-but-for-stylesheets-in-jquery
                 function loadJavascriptAndCssFiles(urls, successCallback, failureCallback) {
@@ -328,10 +401,38 @@ module.exports = function(RED) {
                 function adjust(color, amount) {
                     return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
                 }
+                
+                function getPosition(scope, msg) {
+                    var xp = 0,yp = 0;
+                    
+                    switch ($scope.config.inputPositionXType) {
+                        case "num":
+                            // Get the x coordinate from the config screen
+                            xp = $scope.config.inputPositionXField;
+                            break;
+                        case "msg":
+                            // Get the x coordinate from the specified message field
+                            xp = msg.x;
+                            break;
+                    }
+                    
+                    switch ($scope.config.inputPositionYType) {
+                        case "num":
+                            // Get the y coordinate from the config screen
+                            yp = $scope.config.inputPositionYField;
+                            break;
+                        case "msg":
+                            // Get the y coordinate from the specified message field
+                            yp = msg.y;
+                            break;
+                    }
+                    
+                    return {clientX: parseInt(xp), clientY: parseInt(yp)};
+                }
 
                 $scope.flag = true;
 
-                $scope.init = function (config) {
+                $scope.init = function (config) {          
                     console.log("ui_context_menu: ui_contextmenu.initController > $scope.init()")
                     $scope.config = config;
                     $scope.contextmenuItems = null;
@@ -393,43 +494,51 @@ module.exports = function(RED) {
                         options.fontSize = $scope.config.fontSize + "px";
                     }
                    
-                    // The ContextMenu instance creates a container, which is a DIV element that contains an UL list (of menu items).
-                    // Since there is no ContextMenu instance (anymore), all old containers should be removed from the DOM.
-                    // These containers are added directly under the 'body', so we have to make sure we don't delete similar other nodes.
-                    // Therefore we delete DIV elements with id starting with 'cm_' and class 'cm_container'.
-                    var contextMenuContainers = document.querySelectorAll("div[id^='cm_'].cm_container");
-                    Array.prototype.forEach.call( contextMenuContainers, function( node ) {
-                        node.parentNode.removeChild( node );
-                    });
-                    
-                    try {
-                        // Only load the context menu libraries from the server, when not loaded yet
-                        if(window.ContextMenu){
-                            $scope.contextMenu = new ContextMenu([],options); 
+                    if (!$scope.contextMenu) {
+                        // The ContextMenu instance creates a container, which is a DIV element that contains an UL list (of menu items).
+                        // Since there is no ContextMenu instance (anymore), all old containers should be removed from the DOM.
+                        // These containers are added directly under the 'body', so we have to make sure we don't delete similar other nodes.
+                        // Therefore we delete DIV elements with id starting with 'cm_' and class 'cm_container'.
+                        var contextMenuContainers = document.querySelectorAll("div[id^='cm_'].cm_container");
+                        Array.prototype.forEach.call( contextMenuContainers, function( node ) {
+                            node.parentNode.removeChild( node );
+                        });
+                        
+                        try {
+                            // Only load the context menu libraries from the server, when not loaded yet
+                            if(window.ContextMenu){
+                                $scope.contextMenu = new ContextMenu([],options); 
+                            }
+                            else {
+                                var urls = [
+                                    'ui_context_menu/contextmenu.js',
+                                    'ui_context_menu/contextmenu.css'
+                                ];
+                                loadJavascriptAndCssFiles(urls, 
+                                    function(){
+                                        //success
+                                        $scope.contextMenu = new ContextMenu([],options);  
+                                    },
+                                    function(){
+                                        //fail
+                                    });
+                            }
                         }
-                        else {
-                            var urls = [
-                                'ui_context_menu/contextmenu.js',
-                                'ui_context_menu/contextmenu.css'
-                            ];
-                            loadJavascriptAndCssFiles(urls, 
-                                function(){
-                                    //success
-                                    $scope.contextMenu = new ContextMenu([],options);  
-                                },
-                                function(){
-                                    //fail
-                                });
+                        catch (error) {
+                            console.error(error)
                         }
                     }
-                    catch (error) {
-                        console.error(error)
-                    }
+                   
                 }
 
                 $scope.$watch('msg', function(msg) {
                     // Ignore undefined messages.
                     if (!msg) {
+                        return;
+                    }
+                    
+                    // Ignore messages which have been flagged invalid (by our server side validations).
+                    if (msg.invalid_message) {
                         return;
                     }
 
@@ -446,39 +555,49 @@ module.exports = function(RED) {
                     }
                                 
                     var showOptions = getPosition($scope, msg);//determine postion top/left
+                    
+                    if (!showOptions) {
+                        return;
+                    }
+                    
                     showOptions.target = document;
 
                     console.log("ui_context_menu: msg received")
-                    
-                    if($scope.config.menu === "msg"){
-                        //As msg.menu is source - just assign it to $scope.contextmenuItems
-                        $scope.contextmenuItems = msg.menu;
-                    } else if ($scope.config.menuItems && $scope.config.menu === "fixed" && !$scope.contextmenuItems){
-                        //As the menu is fixed items, generate a compatable contextmenuItems object from $scope.config.menuItems
-                        $scope.contextmenuItems = [];
-                        var index = 0;
-                        $scope.config.menuItems.forEach(function(menuItem) {
-                            var id=menuItem.id || index;
-                            if(menuItem.label.startsWith("--")){
-                                $scope.contextmenuItems.push({text: "---"});
-                            } else {
-                                $scope.contextmenuItems.push({
-                                    index: index,
-                                    id: menuItem.id,
-                                    icon: menuItem.icon,
-                                    enabled: menuItem.enabled,
-                                    visible: menuItem.visible,
-                                    label: menuItem.label,
-                                    text: menuItem.label,
-                                    payload: menuItem.payload,
-                                    payloadType: menuItem.payloadType,
-                                    topic:  menuItem.topic,
-                                    outputField: menuItem.outputField
-                                })
+                
+                    switch($scope.config.inputMenuType) {
+                        case "msg":
+                            // Get the input value from the specified message field
+                            $scope.contextmenuItems = msg.menu;
+                            break;
+                        case "fixed":
+                            if ($scope.config.menuItems && !$scope.contextmenuItems){
+                                //As the menu is fixed items, generate a compatable contextmenuItems object from $scope.config.menuItems
+                                $scope.contextmenuItems = [];
+                                var index = 0;
+                                $scope.config.menuItems.forEach(function(menuItem) {
+                                    var id=menuItem.id || index;
+                                    if(menuItem.label.startsWith("--")){
+                                        $scope.contextmenuItems.push({text: "---"});
+                                    } else {
+                                        $scope.contextmenuItems.push({
+                                            index: index,
+                                            id: menuItem.id,
+                                            icon: menuItem.icon,
+                                            enabled: menuItem.enabled,
+                                            visible: menuItem.visible,
+                                            label: menuItem.label,
+                                            text: menuItem.label,
+                                            payload: menuItem.payload,
+                                            payloadType: menuItem.payloadType,
+                                            topic:  menuItem.topic,
+                                            outputField: menuItem.outputField
+                                        })
+                                    }
+                                    index++;
+                                });
                             }
-                            index++;
-                        });
-                    } 
+                            break;
+                    }
 
                     if($scope.contextMenu) {
                         $scope.contextMenu.menu = $scope.contextmenuItems;
