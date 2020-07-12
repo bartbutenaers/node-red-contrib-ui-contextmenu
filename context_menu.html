@@ -50,12 +50,18 @@
                 }},
             height: {value: -1},
             fontSize: {value: 16},
-            position: {value: "fixed"},
+            position: {value: "fixed"}, // Obsolete field (keep for existing nodes)
+            xCoordinate: {value: 50},   // Obsolete field (keep for existing nodes)
+            yCoordinate: {value: 50},   // Obsolete field (keep for existing nodes)
+            menu: {value: "fixed"},     // Obsolete field (keep for existing nodes)
+            inputPositionXField: {value:"event.pageX", validate: function(v) { return !v || v !== ""}},
+            inputPositionXType: {value: "msg"},
+            inputPositionYField: {value:"event.pageY", validate: function(v) { return !v || v !== ""}},
+            inputPositionYType: {value: "msg"},
             outputField: {value: "payload"},
             //unit: {value: "perc"},
-            xCoordinate: {value: 50},
-            yCoordinate: {value: 50},
-            menu: {value: "fixed"},
+            inputMenuField: {value:"menu", validate: function(v) { return !v || v !== ""}},
+            inputMenuType: {value: "msg"},
             menuItems: {value: []},
             colors: {value: 'native'},
             // By default we set the same colors as in the ContextMenu library CSS file
@@ -79,6 +85,8 @@
         },
         oneditprepare: function() {
             var node = this;
+
+            $('#node-input-inputMenuField').val(node.inputMenuField || "menu");
      
             // Migrate older nodes, that didn't have the auto-hide feature yet
             if(node.intervalLength === undefined) {
@@ -779,13 +787,13 @@
             const defaultPayloadType = "str";
             // Create a table of menu items
             var menuItemList = $("#node-input-menuItems-container").css('min-height','150px').css('min-width','500px').editableList({
-                header: $("<div>").css({padding:"6px"}).append($.parseHTML(`
-                    <div style='width:15%; margin-left:25px; display: inline-grid'><b>ID</b></div> 
-                    <div style='width:15%; display: inline-grid'><b>Label</b></div>  
-                    <div style='width:15%; display: inline-grid'><b>Icon</b></div>  
-                    <div style='width:15%; display: inline-grid'><b>Topic</b></div>  
-                    <div style='width:25%; display: inline-grid'><b>Payload</b></div>  
-                    `)),
+                header: $("<div>").css({padding:"6px"}).append($.parseHTML(
+                    "<div style='width:15%; margin-left:25px; display: inline-grid'><b>ID</b></div>" +
+                    "<div style='width:15%; display: inline-grid'><b>Label</b></div>" +
+                    "<div style='width:15%; display: inline-grid'><b>Icon</b></div>" +
+                    "<div style='width:15%; display: inline-grid'><b>Topic</b></div>" +
+                    "<div style='width:25%; display: inline-grid'><b>Payload</b></div>"
+                    )),           
                 addItem: function(container, i, menuItem) {
                     // When menuItem === {} then we have a new list item (i.e. user pressed the addItem button)
                     if (Object.keys(menuItem).length === 0) {
@@ -855,50 +863,94 @@
                     menuItemList.editableList('addItem', {id:menuItem.id, icon:menuItem.icon, label:menuItem.label, topic:menuItem.topic, payload:menuItem.payload, payloadType:menuItem.payloadType, visible:menuItem.visible, enabled:menuItem.enabled});
                 });
             }
+
+            // Show the inputPositionXField and inputPositionYField value in a typedinput element (dropdown with 'msg' and 'num')
+            $("#node-input-typed-inputPositionXField").typedInput({types:['msg', 'num']});
+            $("#node-input-typed-inputPositionYField").typedInput({types:['msg', 'num']});
+
+            // Migrate existing nodes (containing the old 'position' field), which have no typedinputs for the location yet
+            switch (node.position) {
+                case "fixed":
+                    // Copy the obsolete x and y coordinates to the new typedinputs
+                    $('#node-input-inputPositionXField').val(node.xCoordinate);
+                    $('#node-input-inputPositionYField').val(node.yCoordinate);
+                    
+                    $("#node-input-typed-inputPositionXField").typedInput('type','num');
+                    $("#node-input-typed-inputPositionYField").typedInput('type','num');
+                    break;
+                case "msg":
+                    // Copy the obsolete msg.position field where the location was being expected to arrive in the past
+                    $('#node-input-inputPositionXField').val("position.x");
+                    $('#node-input-inputPositionYField').val("position.y");  
+                    
+                    $("#node-input-typed-inputPositionXField").typedInput('type','msg');
+                    $("#node-input-typed-inputPositionYField").typedInput('type','msg');
+                    break;
+                default:
+                    // Recent node, so no migration needed
+                    $('#node-input-inputPositionXField').val(node.inputPositionXField);
+                    $('#node-input-inputPositionYField').val(node.inputPositionYField);
+                    
+                    $("#node-input-typed-inputPositionXField").typedInput('type', node.inputPositionXType);
+                    $("#node-input-typed-inputPositionYField").typedInput('type', node.inputPositionYType);
+            }
             
-            // // Only show the X/Y coordinate fields, when the position is "fixed"
-            // $("#node-input-unit").change(function() {
-            //     if ($("#node-input-unit").val() === "pix") {
-            //         $("#node-input-xCoordinate-unit").text("px");
-            //         $("#node-input-yCoordinate-unit").text("px");
-            //     }
-            //     else {
-            //         $("#node-input-xCoordinate-unit").text("%");
-            //         $("#node-input-yCoordinate-unit").text("%");
-            //     }
-            // });
-            // $("#node-input-unit").change();
             
+            var xValue = $("#node-input-inputPositionXField").val() || '';
+            var yValue = $("#node-input-inputPositionYField").val() || '';
+            $("#node-input-typed-inputPositionXField").typedInput('value',xValue);
+            $("#node-input-typed-inputPositionYField").typedInput('value',yValue);      
             
-            // Only show the X/Y coordinate fields, when the position is "fixed"
-            $("#node-input-position").change(function() {
-                if ($("#node-input-position").val() === "fixed") {
-                    $(".contextmenu-position-row").show();
-                }
-                else {
-                    $(".contextmenu-position-row").hide();
-                }
-                updateEditorLayout();
-            });
-            $("#node-input-position").change();
+            // Show the inputMenuField value in a typedinput element (dropdown with 'msg' and a custom typedefinition)
+            $("#node-input-typed-inputMenuField").typedInput({types:['msg', {
+                // Custom typedefinition to represent a fixed menu
+                value: 'fixed',
+                label: 'Fixed layout',
+                hasValue: false
+            }]});
             
             // Only show the menu items table, when the menu is "fixed"
-            $("#node-input-menu").change(function() {
-                if ($("#node-input-menu").val() === "fixed") {
+            $("#node-input-typed-inputMenuField").change(function(type, value) {
+                if (value === "fixed") {
                     $(".contextmenu-menuitems-row").show();
                 }
                 else {
                     $(".contextmenu-menuitems-row").hide();
                 }
             });
-            $("#node-input-menu").change();
+            
+            // Migrate existing nodes (containing the old 'position' field), which have no typedinput for the menu yet
+            switch (node.menu) {
+                case "fixed":         
+                    $("#node-input-typed-inputMenuField").typedInput('type','fixed');
+                    break;
+                case "msg":
+                    // Copy the obsolete msg.menu field where the menu was being expected to arrive in the past
+                    $('#node-input-inputMenuField').val("menu");          
+                    $("#node-input-typed-inputMenuField").typedInput('type','msg');
+                    break;                
+                default:
+                    // Recent node, so no migration needed
+                    $('#node-input-inputMenuField').val(node.inputMenuField);
+                    $("#node-input-typed-inputMenuField").typedInput('type', node.inputMenuType);
+            }
+            
+            var value = $("#node-input-inputMenuField").val() || '';
+            $("#node-input-typed-inputMenuField").typedInput('value',value);
+            
+            // Show the outputField value in a typedinput element (dropdown with only 'msg')
+            var value = $("#node-input-outputField").val() || '';
+            $("#node-input-typed-outputField").typedInput({types:['msg']});
+            $("#node-input-typed-outputField").typedInput('type','msg');
+            $("#node-input-typed-outputField").typedInput('value',value);
+
             $( "#node-input-menuItems-container" ).sortable({
                 axis: "y",
                 handle:".node-input-menuItem-handle",
                 cursor: "move"
             });
             
-            // Only show the colour fields, when the position is "fixed"
+            // Only show the colour fields, when the colours are "custom"
             $("#node-input-colors").change(function() {
                 if ($("#node-input-colors").val() === "custom") {
                     $(".contextmenu-customColours").show();
@@ -912,6 +964,37 @@
         },
         oneditsave: function() {
             var node = this;
+            
+            // Remove (once) the obsolete position-related data
+            delete node.position;
+            delete node.xCoordinate;
+            delete node.yCoordinate;
+            
+            // Copy the inputPositionXField value from the typedinput element to the inputPositionXField element
+            // And copy the inputPositionXField type to this node.
+            var value = $("#node-input-typed-inputPositionXField").typedInput('value');
+            $("#node-input-inputPositionXField").val(value);
+            node.inputPositionXType = $("#node-input-typed-inputPositionXField").typedInput('type');
+
+            // Copy the inputPositionYField value from the typedinput element to the inputPositionYField element
+            // And copy the inputPositionXField type to this node.
+            value = $("#node-input-typed-inputPositionYField").typedInput('value');
+            $("#node-input-inputPositionYField").val(value);  
+            node.inputPositionYType = $("#node-input-typed-inputPositionYField").typedInput('type');     
+
+            // Remove (once) the obsolete menu-related data
+            delete node.menu;            
+
+            // Copy the inputMenuField value from the typedinput element to the inputMenuField element
+            value = $("#node-input-typed-inputMenuField").typedInput('value');
+            $("#node-input-inputMenuField").val(value);
+            node.inputMenuType = $("#node-input-typed-inputMenuField").typedInput('type');
+            
+            // Copy the outputField value from the typedinput element to the outputField element
+            // No need to store the type, since there is only one option ('msg')
+            value = $("#node-input-typed-outputField").typedInput('value');
+            $("#node-input-outputField").val(value); 
+            
             // Copy all the menu items from the editableList to this node
             node.menuItems = [];
             var menuItemsList = $("#node-input-menuItems-container").editableList('items');
@@ -937,7 +1020,7 @@
 </script>
 
 <script type="text/html" data-template-name="ui_context_menu">
-    <div class="form-row" id="template-row-group">
+   <div class="form-row" id="template-row-group">
         <label for="node-input-group"><i class="fa fa-table"></i> Group</span></label>
         <input type="text" id="node-input-group">
     </div>    
@@ -950,83 +1033,38 @@
         <input id="node-input-fontSize" type="number" style="width: 60px">
         <span>px</span>
     </div>
-    <!-- <div class="form-row">
-        <label for="node-input-unit"><i class="fa fa-cog"></i> Units</label>
-        <select id="node-input-unit">
-            <option value="perc">Percentages</option> 
-            <option value="pix">Pixels</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-position"><i class="fa fa-crosshairs"></i> Position</label>
-        <select id="node-input-position">
-            <option value="fixed">Fixed</option> 
-            <option value="msg">Message based</option>
-        </select>
-    </div> -->
-
-    <div class="form-row">
-        <label for="node-input-position"><i class="fa fa-crosshairs"></i> Position</label>
-        <select id="node-input-position" style="width:140px">
-            <option value="fixed">Fixed</option> 
-            <option value="msg">Message based</option>
-        </select>
-
-        <!-- <label for="node-input-unit" style="padding-left:20px; width: 60px"><i class="fa fa-cog"></i> Units</label>
-        <select id="node-input-unit" style="width:120px">
-            <option value="perc">Percentages</option> 
-            <option value="pix">Pixels</option>
-        </select> -->
-    </div>
-
-    <!-- <div class="form-row contextmenu-position-row">
-        <label for="node-input-xCoordinate"><i class="fa fa-arrows-h"></i> X coordinate</label>
-        <input id="node-input-xCoordinate" type="number" style="width: 60px">
-        <span id="node-input-xCoordinate-unit">px</span>
-    </div>
-    <div class="form-row contextmenu-position-row">
-        <label for="node-input-yCoordinate"><i class="fa fa-arrows-v"></i> Y coordinate</label>
-        <input id="node-input-yCoordinate" type="number" style="width: 60px">
-        <span id="node-input-yCoordinate-unit">px</span>
-    </div> -->
-
-    <div class="form-row contextmenu-position-row" style="display: block;">
-        <label for="node-input-xCoordinate"><i class="fa fa-arrows-h"></i> X coordinate</label>
-        <input id="node-input-xCoordinate" type="number" style="width: 60px" dir="">
-        <span id="node-input-xCoordinate-unit">px</span>
     
-        <label for="node-input-yCoordinate" style="padding-left:20px"><i class="fa fa-arrows-v"></i> Y coordinate</label>
-        <input id="node-input-yCoordinate" type="number" style="width: 60px" dir="">
-        <span id="node-input-yCoordinate-unit">px</span>
-    </div>
-
     <div class="form-row">
-        <label for="node-input-outputField"><i class="fa fa-envelope"></i> Output to</label>
-        <div class="red-ui-typedInput-container" style="width: 70%; margin-right: 5px; margin-left: 3px;">    
-            <button class="red-ui-typedInput-type-select"> 
-                <span class="red-ui-typedInput-type-label">msg.</span>
-            </button>
-            <div class="red-ui-typedInput-input-wrap" style="left: 46px; right: 2px;">
-                <input type="text" id="node-input-outputField" placeholder="payload" style="width: 100%; margin-right: 0px; margin-left: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;" autocomplete="disable" dir="" class="red-ui-typedInput-input">
-            </div>
-        </div>
-    </div>
-
-    <div class="form-row">
-        <label for="node-input-menu"><i class="fa fa-list-alt"></i> Menu</label>
-        <select id="node-input-menu">
-            <option value="fixed">Fixed</option> 
-            <option value="msg">Message based</option>
-        </select>
+        <label for="node-input-typed-inputPositionXField"><i class="fa fa-list"></i> X coord.</label>
+        <input id="node-input-typed-inputPositionXField" type="text" style="width: 70%">
+        <input id="node-input-inputPositionXField" type="hidden">
     </div>
     
+    <div class="form-row">
+        <label for="node-input-typed-inputPositionYField"><i class="fa fa-list"></i> Y coord.</label>
+        <input id="node-input-typed-inputPositionYField" type="text" style="width: 70%">
+        <input id="node-input-inputPositionYField" type="hidden">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-typed-outputField"><i class="fa fa-sign-out"></i> Output field</label>
+        <input id="node-input-typed-outputField" type="text" style="width: 70%">
+        <input id="node-input-outputField" type="hidden">
+    </div>  
+
+    <div class="form-row">
+        <label for="node-input-typed-inputMenuField"><i class="fa fa-list"></i> Menu</label>
+        <input id="node-input-typed-inputMenuField" type="text" style="width: 70%">
+        <input id="node-input-inputMenuField" type="hidden">
+    </div>    
+  
     <div class="form-row form-row-auto-height contextmenu-menuitems-row">
         <!-- Table with menu items -->
         <ol id="node-input-menuItems-container"></ol>
     </div>
     
     </br>
-    
+
     <div class="form-row">
         <label for="node-input-intervalLength"><i class="fa fa-clock-o"></i> Auto hide</label>
         <input type="number" id="node-input-intervalLength" style="width:180px;">
@@ -1102,18 +1140,12 @@
         <div style="padding-left: 15px">
             The font size of the menu items 
         </div>        
-        <h4>Position and Units</h4>
+        <h4>X and Y coordinates</h4>
         <div style="padding-left: 15px">
-            This determines how the menu will be positioned.
-            <p>Position...</p>
+            These coordinates (in pixels!) determine how the menu will be positioned:.
             <ul>
-                <li>Message Based - when selected, <code>msg</code>must contain a <code>position</code>object containing <code>.x</code> and <code>.y</code></li>
-                <li>Fixed - when selected, enter the coordinates into the X Coordinate and Y Coordinate inputs below</li>
-            </ul>
-            <p>Units...</p>
-            <ul>
-                <li>Percentages - when selected, X and Y coordinates are percentage based positioning</li>
-                <li>Pixels - when selected, X and Y coordinates are pixel based positioning</li>
+                <li>Message based, which means the <code>msg</code>must have the specified fields (containing the x and/or y coordinates).</li>
+                <li>Fixed coordinate numbers.</li>
             </ul>
         </div>
         <h4>Output To</h4>
