@@ -328,6 +328,9 @@ module.exports = function(RED) {
                     }
                 }
                 
+                // Keep the original input message
+                newMsg.sourceMsg = msg;
+                
                 // Seem that all the specified msg fields are available, so send a message to the client (containing msg.x, msg.y, msg.z).
                 // This way the message has been flattened, so the client doesn't need to access the nested msg properties.
                 // See https://discourse.nodered.org/t/red-in-ui-nodes/29824/2
@@ -484,9 +487,9 @@ module.exports = function(RED) {
                                 topic:  item.topic || item.path,
                                 outputField: item.outputField
                             }
-                            
+
                             // Show the clicked menu item and the last received msg to the server
-                            $scope.send({ menuItem: menuItem, sourceMsg : $scope.msg || {} });                                    
+                            $scope.send({ menuItem: menuItem, sourceMsg : $scope.msg.sourceMsg || {} });
                         }
                     }
                     
