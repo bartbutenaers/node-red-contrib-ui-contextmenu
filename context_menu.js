@@ -273,6 +273,13 @@ module.exports = function(RED) {
                 // We will workaround it by sending msg.invalid_message=true to the dashboard.
                 
                 var newMsg = {};
+		    
+		if (msg) {
+                    // Copy the socket id from the original input message.  Otherwise the context menu will popup
+                    // in ALL dashboard sessions that are currently open.
+                    // See https://discourse.nodered.org/t/dashboard-socket-id-bug/6229/6?u=bartbutenaers
+                    newMsg.socketid = msg.socketid;
+                }
 
                 if (config.inputPositionXType === "msg") {
                     try {
