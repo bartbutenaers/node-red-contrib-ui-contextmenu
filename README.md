@@ -194,5 +194,3 @@ The output message will contain following fields:
 + *topic*: This will contain the topic value that has been specified in the menu item, or by default a string containing the path of menu clicked item.
 + *sourceMsg*: This will contain original input message, that has triggered the contextmenu to be displayed.
 
-### Thanks to
-dsaul whose menu this node is based on https://github.com/dsaul/contextmenujs/
